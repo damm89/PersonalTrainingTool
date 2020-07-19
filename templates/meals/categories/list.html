@@ -1,0 +1,42 @@
+{% extends "meals/base.html" %}
+{% load static %}
+
+{% block head_title %}
+    Categories
+{% endblock %}
+
+{% block profilecontent %}
+    {% if messages %}
+        {% for message in messages %}
+            {% if 'ilovepancakesprofile' in message.tags %}
+                {{ message|safe }}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
+    <script>
+        var listUrl = "{% url 'api:get-view' cat_str %}";
+        var delUrl = "{% url 'api:delete' cat_str 0 %}";
+        const cols = {{only|safe}};
+        const deletable = true;
+        const editable = false;
+    </script>
+
+    <script>
+        function getWarning(elem) {
+            var elem = $(elem);
+            var item_id = elem.attr('data-id');
+            return $.ajax({
+                url: "{% url 'api:get-item' 'templatecount' %}",
+                data: { 'category_id':item_id,
+                },
+                dataType: 'json',
+            });
+        };
+    </script>
+
+    <div class="container">
+        {% include "empty_table.html" with item_str='category' cols=cols end_left=2 cat_str=cat_str items=mealscategories %}
+    </div>
+
+{% endblock %}

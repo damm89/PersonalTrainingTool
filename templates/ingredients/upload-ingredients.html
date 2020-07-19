@@ -1,0 +1,470 @@
+{% extends "ingredients/base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block head_title %}
+    Mass upload ingredients
+{% endblock %}
+
+{% block morestyles %}
+    <script type="text/javascript" src="{% static '/js/papaparse/papaparse.min.js' %}"></script>
+{% endblock %}
+
+
+{% block profilecontent %}
+    <h3 class="text-center my-3">Upload ingredients</h3>
+    {% if messages %}
+        {% for message in messages %}
+            {% if 'ilovepancakesprofile' in message.tags %}
+                {{ message|safe }}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+    <form class="upload" id="uploadForm">
+        {% csrf_token %}
+        {% crispy form %}
+        {% if redirect_field_value %}
+        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+        {% endif %}
+        <a style="color:white;" class="btn btn-lg btn-primary btn-block disabled mb-3" id="confirmButton">Confirm columns</a>
+        <a style="color:white;" class="btn btn-lg btn-primary btn-block disabled mb-3" id="cleanDataButton">Clean data</a>
+        <a style="color:white;" class="btn btn-lg btn-primary btn-block disabled mb-3" id="previewDataButton">Create data preview</a>
+        <a style="color:white;" class="btn btn-lg btn-primary btn-block disabled mb-3" id="submitButton">Upload ingredients</a>
+    </form>
+    
+    <script>
+        $('#id_filename').prop("disabled",true);
+        var new_ele = '<a style="color:white;" class="btn btn-lg btn-primary btn-block mb-3 disabled" id="helpButton" >Help me match the columns</a>'
+        $('#div_id_name').before(new_ele);
+    </script>
+
+    <script>
+        var ingredientsData;
+        var foodKeys;
+        var cleanedData;
+        var matchUp;
+        var unMatched;
+        const fields = ["name", "amount", "amount_type", "protein", "carbs", "sugars", "fibers", "fats", "saturated_fats", "unsaturated_fats", "salt", "comments", "tag"];
+        const fieldKeys = Object.keys(fields);
+        const reqFields = ["name", "amount", "protein", "carbs", "fats"];
+        var specialError;
+
+        function uploadCleanedData() {
+            $('#failureUpload').remove();
+            $('#submitButton').addClass("disabled");
+            if (Object.keys(cleanedData).length > 0) {
+                $.ajax({
+                    type: "POST",
+                    url: "{% url 'ingredients:mass-upload' %}",
+                    dataType: "JSON",
+                    data: {
+                        ingredientsData: JSON.stringify(cleanedData),
+                        csrfmiddlewaretoken: '{{ csrf_token }}'
+                    },
+                    success: function() {
+                        $('#submitButton').before("<div id='successUpload' class='alert alert-success text-center' role='alert'>You have successfully uploaded your ingredients.</div>");
+                        $('#submitButton').prop('disabled',true);
+                    },
+                    error: function(xhr, textStatus, error) {
+                    console.log(xhr.responseText);
+                    console.log(xhr.statusText);
+                    console.log(textStatus);
+                    console.log(error)
+                    $('#successUpload').remove();
+                    $('#submitButton').before("<div id='failureUpload' class='alert alert-danger text-center' role='alert'>Something went wrong. Try with different data.</div>");
+                    }
+                });
+            } else {
+                $('#submitButton').before("<div id='failureUpload' class='alert alert-danger text-center' role='alert'>No valid data found.</div>");
+                $('#submitButton').removeClass("disabled");
+            }
+        };
+
+        function cleanString(x) {
+            x = x.replace(/ /,'');
+            x = x.replace(/</,'');
+            x = x.replace(/>/,'');
+            x = x.replace(/;/,'');
+            x = x.replace(/$/,'');
+            x = x.replace(/\*/,'');
+            x = x.replace(/\+/,'');
+            x = x.replace(/:/,'');
+            x = x.replace(/@/,'');
+            x = x.replace(/!/,'');
+            x = x.replace(/~/,'');
+            x = x.replace(/"/,'');
+            x = x.replace('[','');
+            x = x.replace(/]/,'');
+            x = x.replace(/{/,'');
+            x = x.replace(/}/,'');
+            x = x.replace(/|/,'');
+            x = x.replace("'",'');
+            x = x.replace(/#/,'no.');
+            x = x.replace(/%/,'percent');
+            x = x.replace(/_/,' ');
+            x = x.replace(/=/,' is ');
+            return x;
+        };
+
+        function cleanData() {
+            cleanedData = {};
+            for (const key in ingredientsData["data"]) { 
+                ingredientsVals = ingredientsData["data"][key];
+                cleanedData[key] = {"cleaned_data":{}};
+                var amount_string;
+                for (const foodKey in ingredientsVals) {
+                    foodValue = ingredientsVals[foodKey];
+                    if (foodValue == null) {
+                        foodValue = "";
+                    };
+
+                    if (matchUp[foodKey] != "name" && matchUp[foodKey] != "amount_type" && matchUp[foodKey] != "amount" && matchUp[foodKey] != "comments" && matchUp[foodKey] != "tag") {
+                        cleanedData[key]['cleaned_data']['original_'+matchUp[foodKey]] = parseFloat(foodValue);
+                    } else {
+                        cleanedData[key]['cleaned_data'][matchUp[foodKey]] = cleanString(foodValue);
+                    };
+
+                    if (matchUp[foodKey] == "amount") {
+                        amount_string = cleanString(foodValue)
+                    };
+                };
+
+                if (specialError) {
+                    cleanedData[key]['cleaned_data']['amount_type'] = amount_string;
+                };
+
+            };
+
+            $('#successClean').remove();
+            $('#previewDataButton').before("<div id='successClean' class='alert alert-success text-center' role='alert'>You have succesfully cleaned the data.</div>");
+            $('#previewDataButton').removeClass("disabled");
+            $('#submitButton').removeClass("disabled");
+        };
+
+        
+        function definitiveMatchUp() {
+            fieldsKeys = Object.keys(fields);
+            var unMatched = [];
+            var matched = [];
+            specialError = false;
+            for (const fieldKey of fieldsKeys) {
+                var selectedValue = $('#id_'+fields[fieldKey]).val();
+
+                if (fields[fieldKey] != "amount_type") {
+
+                    if ( selectedValue == "N/A" ) {
+                        unMatched.push(fields[fieldKey]);
+
+                    } else {
+                        matchUp[selectedValue] = fields[fieldKey];
+                        matched.push(selectedValue);
+                    };
+                } else {
+                    if ( selectedValue == "N/A" ) {
+                        specialError = true;
+                        matchUp["special_error"] = "amount_type"
+ 
+                    } else {
+                        matchUp[selectedValue] = fields[fieldKey];
+                        matched.push(selectedValue);
+                    };
+                };
+            };
+
+            var errors = "";
+            var unmKeys = Object.keys(unMatched);
+            for (const unmKey of unmKeys) {
+                var unMatchVal = unMatched[unmKey];
+                if (reqFields.includes(unMatchVal)) {
+                    errors = errors +'<div class="alert alert-danger text-center" role="alert">Matching '+ unMatchVal +' is required.</div>';
+                };
+            };
+            
+            let notMatched = foodKeys.filter(x => !matched.includes(x));
+            notMatched = Array.from(new Set(notMatched.concat(unMatched))).sort();
+            var notmatchedKeys = Object.keys(notMatched);
+
+            var warnings = "";
+            if (notMatched.length > 0) {
+                var warnings = '<div class="alert alert-warning text-center" role="alert">';
+                var i = 0;
+                for (const nmKey of notmatchedKeys) {
+                    var nmatchVal = notMatched[nmKey];
+                    if (i < notmatchedKeys.length - 1) {
+                        warnings = warnings + nmatchVal +" wasn't matched.<br>"; 
+                    } else {
+                        warnings = warnings + nmatchVal +" wasn't matched.<brlast>"; 
+                    };
+                    i += 1;
+                };
+            };
+
+            if (specialError) {
+                warnings = warnings.replace('<brlast>','<br>');
+                warnings = warnings + " amount_type wasn't matched - we matched it to the amount column, which hopefully looks like 100g or 3.5oz or similar.</div>";
+            } else {
+                warnings = warnings.replace('<brlast>','</div>');
+            };
+
+            if (errors.length == 0) {
+                $('#cleanDataButton').removeClass("disabled");
+                $('#cleanDataButton').before("<div class='alert alert-success text-center' role='alert'>You have succesfully matched the columns.</div>");
+            } else {
+                if (!$('#cleanDataButton').hasClass("disabled")) {
+                    $('#cleanDataButton').addClass("disabled");
+                };
+
+                $('#cleanDataButton').before(errors);
+            };
+
+            if (warnings.length > 0) {
+                $('#cleanDataButton').before(warnings);
+            } else {
+                $('div.alert-warning').remove();
+            };
+
+        };
+
+
+        function matchUpFields() {
+            matchUp = {};
+            for (const foodKey in foodKeys) {
+                var foodValue = foodKeys[foodKey];
+                var x = foodValue.toLowerCase();
+                if (x.search('uni') > -1) {
+                    matchUp[foodValue] = "amount_type";
+                } else {
+                    if (x.search("type") > -1) {
+                        matchUp[foodValue] = "amount_type";
+                    } else {
+                        if (x.search("uns") > -1) {
+                            matchUp[foodValue] = "unsaturated_fats";
+                        } else {
+                            if (x.search("pro") > -1) {
+                                matchUp[foodValue] = "protein";
+                            } else {
+                                if (x.search("car") > -1) {
+                                    matchUp[foodValue] = "carbs";
+                                } else {
+                                    if (x.search("sug") > -1) {
+                                        matchUp[foodValue] = "sugars";
+                                    } else {
+                                        if (x.search("fi") > -1) {
+                                            matchUp[foodValue] = "fibers";
+                                        } else {
+                                            if (x.search("sat") > -1) {
+                                                matchUp[foodValue] = "saturated_fats";
+                                            } else {
+                                                if (x.search("amo") > -1) {
+                                                    matchUp[foodValue] = "amount";
+                                                } else {
+                                                    if (x.search("fat") > -1) {
+                                                        matchUp[foodValue] = "fats";
+                                                    } else {
+                                                        if (x.search("com") > -1) {
+                                                            matchUp[foodValue] = "comments";
+                                                        } else {
+                                                            if (x.search("sa") > -1) {
+                                                                matchUp[foodValue] = "salt"
+                                                            } else {
+                                                                if (x.search("nam") > -1) {
+                                                                    matchUp[foodValue] = "name";
+                                                                } else {
+                                                                    if (x.search("ingr") > -1) {
+                                                                        matchUp[foodValue] = "name";
+                                                                    } else {
+                                                                        if (x.search("tag") > -1) {
+                                                                            matchUp[foodValue] = "tag";
+                                                                        } else {
+                                                                        matchUp[foodValue] = "N/A";
+                                                                        };
+                                                                    };
+                                                                };
+                                                            };
+                                                        };
+                                                    };
+                                                };
+                                            };
+                                        };
+                                    };
+                                };
+                            };
+                        };
+                    };
+                };
+            };
+        };
+
+
+        function helpFillOptions() {
+            for (key in matchUp) {
+                $('#id_'+matchUp[key]).val(key);
+            };
+        };
+
+
+        function addOptions() {
+            optionsList = "";
+            for (const key in foodKeys) {
+                optionsList = optionsList + "<option>" + foodKeys[key] + "</option>";
+            };
+            optionsList = "<option>N/A</options>" + optionsList;
+            $('select.select.form-control').append(optionsList);
+        };
+        
+
+        function handleFileSelect(evt) {
+            $('option').remove();
+            $('#accordionTable').remove();
+            $('div.alert').remove();
+
+            var buttons = ['#helpButton', '#confirmButton','#cleanDataButton','#previewDataButton','#submitButton'];
+            buttonKeys = Object.keys(buttons);
+            for (const buttonKey in buttonKeys) {
+                if (!$(buttons[buttonKey]).hasClass('disabled')) {
+                    $(buttons[buttonKey]).addClass('disabled');
+                };
+            };
+            
+            
+            var file = evt.target.files[0];
+            
+            Papa.parse(file, {
+                worker: true,
+                header: true,
+                dynamicTyping: true,
+                complete: function(results) {
+                    var errors = results['errors'];
+                    if (errors.length > 0) {
+                        $("#id_filename").val(null);
+                        var uniqueErrors = [];
+                        for (const error in errors) {
+                            var x = errors[error]['message'];
+                            if ( !uniqueErrors.includes(x) ) {
+                                uniqueErrors.push(x)
+                            };
+                        };
+
+                        error_messages = '<div class="alert alert-danger text-center" role="alert">Errors occured! <br>';
+                        var i = 0;
+                        errorKeys = Object.keys(uniqueErrors);
+                        for (const error of errorKeys) {
+                            if (i < uniqueErrors.length-1) {
+                                error_messages = error_messages + 'Error: '+ uniqueErrors[error] +'<br>';
+                            } else {
+                                error_messages = error_messages + 'Error: '+ uniqueErrors[error] +'</div>';
+                            }
+                            i += 1;
+
+                        };
+                        $('#helpButton').before(error_messages);
+                    } else {
+                        foodNumbers = Object.keys(results['data'][0])
+                        foodKeys = [];
+
+                        for (const foodKey in foodNumbers) {
+                            foodKeys.push(foodNumbers[foodKey]);
+                        };
+
+                        addOptions();
+                        matchUpFields();
+                        $('#helpButton').removeClass('disabled');
+                        $('#confirmButton').removeClass('disabled');
+                        ingredientsData = results;
+                    };
+                }
+            });
+        };
+        
+
+        $(document).ready(function(){
+            $('#id_filename').prop("disabled",false);
+            $("#id_filename").on('change',handleFileSelect);
+        });
+
+        $('#helpButton').click(function(){
+            helpFillOptions();
+        });
+
+        $('#confirmButton').click(function() {
+            $('div.alert').remove();
+            definitiveMatchUp();
+        });
+
+        $('#cleanDataButton').click(function() {
+            cleanData();
+        });
+
+        $('#previewDataButton').click(function() {
+                $('#accordionTable').remove();
+                var table_mid = "";
+                for (const key in cleanedData) {
+                    var row = "";
+                    for (const fieldKey of fieldKeys) {
+                        fieldVal = fields[fieldKey];
+                        if (fieldVal == "name") {
+                            row = row + '<th scope="row">' + cleanedData[key]['cleaned_data'][fieldVal] + '</th>';
+
+                        } else {
+                            if (fieldVal != 'comments' && fieldVal != 'amount' && fieldVal != 'tag' && fieldVal != 'amount_type') {
+                                var rowValue = cleanedData[key]['cleaned_data']['original_' + fieldVal];
+                                if (typeof rowValue != 'undefined') {
+                                    row = row + '<th scope="row" class="text-center">' + rowValue + '</th>';
+
+                                } else {
+                                    row = row + '<th scope="row" class="text-center"></th>';
+                                };
+
+                            } else {
+                                var rowValue = cleanedData[key]['cleaned_data'][fieldVal];
+                                if (typeof rowValue != 'undefined') {
+                                    row = row + '<th scope="row" class="text-center">' + rowValue + '</th>';
+
+                                } else {
+                                    row = row + '<th scope="row" class="text-center"></th>';
+                                };
+                            }
+                        };
+                    };
+                    row = "<tr>" + row + "</tr>";
+                    table_mid = table_mid + row;
+                };
+
+                table = `
+                <div class="accordion md-accordion" id="accordionTable" role="tablist" aria-multiselectable="true">
+                    <div class="card mb-3">
+                                <div class="card-header text-center collapsed" aria-controls="previewCollapse" data-toggle="collapse" data-parent="#accordionTable" href="#previewCollapse" id="tableHeader">
+                                    <a class="card-title">
+                                        Preview data
+                                    </a>
+                                </div>
+                        <div class="collapse" id="previewCollapse" aria-labelledby="tableHeader" data-parent="#accordionTable">
+                        <div class="table-responsive">
+                            <table class="table table-striped w-auto">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Name</th>
+                                        <th scope="col">Amount</th>
+                                        <th scope="col">Amount type</th>
+                                        <th scope="col">Protein</th>
+                                        <th scope="col">Carbs</th>
+                                        <th scope="col">Sugars</th>
+                                        <th scope="col">Fibers</th>
+                                        <th scope="col">Fats</th>
+                                        <th scope="col">Sat. Fats</th>
+                                        <th scope="col">Unsat. Fats</th>
+                                        <th scope="col">Salt</th>
+                                        <th scope="col">Comments</th>
+                                        <th scope="col">Tags</th>
+                                    </tr>
+                                </thead>
+                                <tbody>` + table_mid + '</tbody></table></div></div></div></div>';
+                $('#submitButton').before(table);
+            });
+        
+        $('#submitButton').click(function() {
+            uploadCleanedData();
+        });
+    </script>
+
+{% endblock %}

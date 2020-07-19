@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block stylesheet %}
+<link rel="stylesheet" href="{% static 'css/profiles.css' %}">
+    {% block morestyles %}
+    {% endblock %}
+{% endblock %}
+
+{% block jsscript %}
+<script type="text/javascript">
+    $(document).ready(function () {
+        $('#sidebarCollapse').on('click', function () {
+            $('#sidebar').toggleClass('active');
+        });
+    });
+</script>
+{% endblock %}
+
+{% block submenu %}
+<nav class="navbar navbar-light bg-white navbar-expand-md" role="navigation">
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#pmenu" aria-controls="pmenu" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse justify-content-center border-bottom" id="pmenu">
+        <ul class="nav nav-pills nav-fill pb-2">
+            <li class="nav-item col-12 col-md-auto px-1 px-md-0">
+                <a class="nav-link" href="{% url 'dashboard:home' %}" id="dsb">
+                    Dashboard
+                </a>
+            </li>
+            <li class="nav-item col-12 col-md-auto px-1 px-md-0">
+                <a class="nav-link" href="{% url 'clientaccounts:client-accounts' %}" id="cadd">
+                    Accounts
+                </a>
+            </li>
+            <li class="nav-item col-12 col-md-auto px-1 px-md-0">
+                <a class="nav-link" href="{% url 'ingredients:ingredients' %}" id="ingdd">
+                    Ingredients
+                </a>
+            </li>
+            <li class="nav-item col-12 col-md-auto px-1 px-md-0">
+                <a class="nav-link" href="{% url 'meals:meals' %}" id="mlsdd">
+                    Meals
+                </a>
+            </li>
+            <li class="nav-item col-12 col-md-auto px-1 px-md-0">
+                <a class="nav-link" href="{% url 'mealplans:mealplan-templates' %}" id="mlpsdd">
+                    Mealplan Templates
+                </a>
+            </li>
+            <li class="nav-item col-12 col-md-auto px-1 px-md-0">
+                <a class="nav-link" href="{% url 'mealplans:mealplans' %}" id="mlplndd">
+                    Mealplans
+                </a>
+            </li>
+            <li class="nav-item dropdown col-12 col-md-auto px-1 px-md-0" style="display:none;">
+                <a class="nav-link" href="#">
+                    Workout plans
+                </a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+{% endblock %}
+
+{% block content %}
+    <!-- Page Content  -->
+    <div class="container px-1 mx-1 mx-auto h-auto">
+    {% block profilecontent %}
+    {% endblock %}
+    </div>
+{% block jscript %}
+{% endblock %}
+<script>
+
+</script>
+{% endblock %}

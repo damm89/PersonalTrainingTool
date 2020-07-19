@@ -1,0 +1,263 @@
+{% extends "meals/base.html" %}
+{% load crispy_forms_tags %}
+{% load staticfiles %}
+
+{% block head_title %}
+    Create meal from tags
+{% endblock %}
+
+{% block morestyles %}
+    <link rel="stylesheet" href="{% static 'css/tagify/tagify.css' %}">
+    <script src="{% static 'js/django-dynamic-formset/jquery.formset.js' %}"></script>
+    <script src="{% static 'js/tagify/tagify.min.js' %}"></script>
+{% endblock %}
+
+{% block profilecontent %}
+    <h3 class="text-center  my-3">Create tag meal</h3>
+    {% if messages %}
+        {% for message in messages %}
+            {% if 'ilovepancakesclientaccounts' in message.tags %}
+                {{ message|safe }}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
+    <form id="tagMealForm" method="POST" action="{% url 'meals:create-tag-meal'%}">
+        {% csrf_token %}
+        {{ tag_meal_ingredient_formset.management_form }}
+
+        <div class="d-flex justify-content-center">
+            <table class="table table-striped">
+                <thead>
+                    <tr class="d-flex flex-row flex-wrap">
+                        <th class="col-5 col-xl-3 px-0 px-sm-1 px-md-3">Quantity</th>
+                        <th class="col-6 col-md-7 col-xl-8 px-0 px-sm-1 px-md-3">Ingredient tag</th>
+                        <th class="col-1 px-1"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for tag_meal_ingredient_form in tag_meal_ingredient_formset %}
+                <tr class="tag-meal-ingredient-formset d-flex flex-row flex-wrap">
+                    <td class="col-4 col-xl-3 px-0 px-sms-1 px-md-3" style="border-top:0px;">
+                        <div class="input-group-prepend">
+                            {{ tag_meal_ingredient_form.original_quantity|as_crispy_field }}
+                            {{ tag_meal_ingredient_form.amount_type|as_crispy_field }}
+                        </div>
+                    </td>
+                    <td class="col-6 col-md-7 col-xl-8 px-0 px-sm-1 px-md-3" style="border-top:0px;">
+                        <input type="text" name="form-{{ forloop.counter0 }}-ingredient-name" 
+                                    class="textinput form-control ingredient-search h-auto" id="id_form-{{ forloop.counter0 }}-ingredient-name" placeholder="Start typing...">
+                    </td>
+                    {{ tag_meal_ingredient_form.tag }}
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {{ tag_meal_form.comment|as_crispy_field }}
+        <div class="input-group">
+            {{ tag_meal_form.add_ing_comment }}
+            <label class="col-form-label" for="{{tag_meal_form.add_ing_comment.id_for_label}}">Also use ingredient comments</label>
+        </div>
+        {{ tag_meal_form.category|as_crispy_field }}
+        <hr>
+        {% if redirect_field_value %}
+        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+        {% endif %}
+        <a class="btn btn-lg btn-primary btn-block primaryAction disabled my-3" id="fakeSubmit" style="color: white;">Create 0 Meals</a>
+        <button style="display:none;" type="submit" id="realSubmit"></button>
+    </form>
+
+    <script>
+        $('div[id*="-original_quantity"]').addClass("w-100");
+
+        const tagIds = {{tags_ids|safe}};
+        const tagIdsKeys = Object.keys(tagIds);
+
+        $('.tag-meal-ingredient-formset').formset({
+            addText: 'Add tag',
+            deleteText: '-',
+            addCssClass: 'add-row btn btn-primary',
+            deleteCssClass: 'delete-row btn btn-primary'
+        });
+        $('.add-row').prop('disabled', true);
+
+
+        var categoryInput = document.querySelector('#id_category'),
+        tagify = new Tagify(categoryInput, {
+            mode:'select',
+            whitelist: {{ category_data_list|safe }},
+            dropdown:{
+                enabled: 0,
+                maxItems: 100
+            },
+            keepInvalidTags:false,
+        });
+
+
+        var oldTags = {};
+        var oldTagsKeys = [];
+        function getMealData() {
+            // Gets all the data from each of the inputs with ids containing "ingredient-name"
+            // Puts them in a new object called newTags
+            // Checks whether or not the newTags is different from the object called oldTags
+            // The fields that have changed are then used to query the database for ingredients with the tags given using an ajax call
+            // Updates oldTags object with changed fields.
+            var newTags = {};
+            $('input[id*="ingredient-name"]').each(function() {
+                var elem = $(this);
+                try {
+                    var elemVal = JSON.parse(elem.val());
+                    var tagNames = [];
+                    for (subVal of elemVal) {
+                        if (tagIdsKeys.includes(subVal['value'])) {
+                            tagNames.push(tagIds[subVal['value']]);
+                        };
+                    }
+                    if (tagNames.length > 0) {
+                        newTags[elem.attr('id')] = tagNames.join(';:');
+                    };
+                } catch(err) {
+                    newTags[elem.attr('id')] = [];
+                };
+            });
+
+            try {
+                $.ajax({
+                    url: "{% url 'api:get-item' 'mealcount' %}",
+                    data: {
+                        'tags_names': JSON.stringify(newTags),
+                    },
+                    dataType: 'json',
+                    success: function (data) {
+                        var mealCount = data['meal_count'];
+                        $('#fakeSubmit').text("Create " + String(mealCount) + " Meals");
+                        if (mealCount > 0) {
+                            $('#fakeSubmit').removeClass('disabled');
+                        } else {
+                            $('#fakeSubmit').addClass('disabled');
+                        };
+                    },
+                    error: function() {
+                        $('#fakeSubmit').text("Create " + 0 + " Meals");
+                        $('#fakeSubmit').addClass('disabled');
+                    }
+                });
+            } catch(err) {
+                console.log("Error");
+            };
+        }; 
+
+
+        var tagified = {};
+        function tagifyThisInput() {
+            // Tagifies the last ingredient-search input and stores it in the tagified object.
+            var tagInput = document.querySelectorAll('.ingredient-search'),
+            tagify = new Tagify(tagInput[tagInput.length- 1], {
+                whitelist:{{ tags_data_list|safe }},
+                enforceWhitelist: true,
+                dropdown:{
+                    enabled: 0,
+                    maxItems: 100
+                },
+            });
+            tagify.on('add', function(){getMealData()});
+            tagify.on('remove', function(){getMealData()});
+            tagified[$(tagInput[tagInput.length- 1]).attr('id')] = tagify;
+        };
+
+
+        tagifyThisInput();
+        $('tags').addClass('textinput textInput');
+
+        function validateChoice(elem) {
+            // Makes sure that we don't accidentally sent an empty field or invalid tags.
+            var optionFound = false;
+            var datalistOptions = {{ tags_data_list|safe }};
+
+            try {
+                var tags = JSON.parse(elem.val());
+            } catch(err) {
+                tags = [''];
+            };
+
+            for (var i =0; i < tags.length; i++){
+                for (var j = 0; j < datalistOptions.length; j++) {
+                    if (tags[i]['value'] == datalistOptions[j]) {
+                        optionFound = true;
+                        break;
+                    };
+                };
+            };
+
+            if (optionFound) {
+                return true
+            } else {
+                tagified[elem.attr('id')].addTags(["Please fill this in this field"]);
+                return false
+            };
+        };
+
+        function bindToDeleteRow() {
+            // Clears the click.removefromingredienttags function from .delete-rows. 
+            // Adds the click.removefromingredienttags function to all .delete-rows.
+            // Add the data-id attribute to buttons containing .delete-rows with appropriate data.
+            // When you click .delete-row, deletes the data-id attribute value from ingredientTags object.
+            var deleteRows = $('.delete-row');
+            deleteRows.off('click.removefromingredienttags');
+            deleteRows.each(function() {
+                $(this).on('click.removefromingredienttags', function() {
+                    getMealData();
+                });
+            });
+        };
+
+    
+        $(document).ready(function() {
+            $('.ingredient-search').prop('disabled', false);
+            $('tags').prop('disabled', false);
+            $('.quantity-input').prop('disabled', false);
+            $('.add-row').prop('disabled', false);
+
+            $('.add-row').on('click', function() {
+                $('.ingredient-search:last').prop('disabled', false);
+                $('.quantity-input:last').prop('disabled', false);
+                $('#fakeSubmit').addClass('disabled');
+                tagifyThisInput();
+                bindToDeleteRow();
+            });
+
+
+            $('#fakeSubmit').click(function() {
+                var validated = [];
+                $('input[id*="ingredient-name"]').each(function() {
+                    validated.push(validateChoice($(this)));
+                });
+
+                if (!validated.includes(false)) {
+                    $('input[id*="ingredient-name"]').each(function() {
+                        $(this).removeClass('form-control');
+                        var oldTagId = $(this).attr('id');
+                        var newTagId = oldTagId.replace('ingredient-name','tag')
+
+                        try {
+                            var oldTags = JSON.parse($('#'+oldTagId).val())
+                            var newTags = ''
+                            for (var i =0; i < oldTags.length; i++){
+                                var tag = oldTags[i]['value'].toLowerCase();
+                                if (tagIdsKeys.includes(tag)) {
+                                    newTags += ';:' + tagIds[tag];
+                                };
+                            };
+                        } catch(err) {
+                            var newTags = '';
+                        };
+
+                        $('#'+newTagId).val(newTags);
+                    });
+                    $('#realSubmit').click();
+                }
+            });
+        });
+    </script>
+{% endblock %}

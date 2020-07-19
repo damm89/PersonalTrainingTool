@@ -1,0 +1,18 @@
+{% extends "base_trainer.html" %}
+
+{% block morestyles %}
+{% endblock %}
+
+{% block profilecontent %}
+{% endblock %}
+
+{% block jscript %}
+<script>
+    $('#pmenu ul li a').removeClass("active")
+    if (window.location.href.includes("templates")) {
+        $('#mlpsdd').addClass("active")
+    } else {
+        $('#mlplndd').addClass("active")
+    };
+</script>
+{% endblock %}

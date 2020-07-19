@@ -1,0 +1,33 @@
+{% extends "mealplans/base.html" %}
+{% load static %}
+
+{% block head_title %}
+    Mealplans
+{% endblock %}
+
+{% block profilecontent %}
+    {% if messages %}
+        {% for message in messages %}
+            {% if 'ilovepancakesprofile' in message.tags %}
+                {{ message|safe }}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
+    <script>
+        var listUrl = "{% url 'api:get-view' cat_str %}";
+        var delUrl = "{% url 'api:delete' cat_str 0 %}";
+        var editUrl = "{% url 'mealplans:edit-mealplan' 0 %}";
+        const cols = {{only|safe}};
+        const deletable = true;
+        const editable = true;
+    </script>
+
+    <div class="container">
+        {% if buttons %}
+            {% include "api/buttons.html" with buttons=buttons %}
+            <hr>
+        {% endif %}
+        {% include "empty_table.html" with item_str='meal plan' items_str='meal plans' cols=cols cat_str=cat_str items=mealplans url_str="mealplans:show-mealplan" %}
+    </div>
+{% endblock %}

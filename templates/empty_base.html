@@ -1,0 +1,25 @@
+{% load static %}
+
+<!doctype html>
+<html lang="en" class="h-100">
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		<title>{% block head_title %}{% endblock %}</title>
+
+		<link rel="stylesheet" href="{% static '/css/bootstrap/bootstrap-4.4.1.min.css' %}">
+		<link rel="stylesheet" href="{% static '/css/fontawesome/all.min.css' %}">
+
+		<script src="{% static '/js/jQuery/jquery-3.4.1.min.js' %}"></script>
+		<script src="{% static '/js/fontawesome/all.min.js' %}"></script>
+		<script src="{% static '/js/popper/popper-1.16.0.min.js' %}"></script>       
+		<script src="{% static '/js/bootstrap/bootstrap-4.4.1.min.js' %}"></script>
+		{% block stylesheet %}{% endblock %}
+		{% block jsscript %}{% endblock %}
+    </head>
+    <body class="h-100">
+    {% block mainmenu %}
+    {% endblock %}
+    </body>
+</html>

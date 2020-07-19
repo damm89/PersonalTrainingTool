@@ -1,0 +1,14 @@
+{% extends "account/base.html" %}
+{% load crispy_forms_tags %}
+{% load account socialaccount %}
+{% load static %}
+{% block head_title %}Account inactive{% endblock %}
+
+{% block content %}
+    <h3 class="text-center">Sorry...</h3>
+    <div class="row">
+        <div class="col-12" style="margin: 0!important;">
+            ...your account is inactive. Please (re)activate your account and try again.
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,2 @@
+class NoMealsException(Exception):
+    pass

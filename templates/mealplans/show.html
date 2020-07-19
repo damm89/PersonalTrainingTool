@@ -1,0 +1,504 @@
+{% extends "mealplans/base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block head_title %}
+    Mealplan
+{% endblock %}
+
+{% block morestyles %}
+    <link rel="stylesheet" href="{% static 'css/mealplans/cards.css' %}">
+{% endblock %}
+
+{% block profilecontent %}
+    {% if messages %}
+        {% for message in messages %}
+            {% if 'ilovepancakesprofile' in message.tags %}
+                {{ message|safe }}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+        
+    {% if client_account %}
+        {% with client_account=client_account %}
+            <div class="py-3">
+                <h3 class="text-center mb-3">Meal Plan for {{client_account.name}}</h3>
+                <div class="form-group row px-1 px-md-3 pt-3">
+                    <label for="staticCA" class="col-sm-2 col-form-label text-right">Client account:</label>
+                    <div class="col-sm-10">
+                        <input type="text" readonly class="form-control" id="staticCA" value="{{ client_account.name }}">
+                    </div>
+                </div>
+                <div class="form-group row px-1 px-md-3">
+                    <label for="staticWeight" class="col-sm-2 col-form-label text-right">Weight:</label>
+                    <div class="col-sm-4">
+                        <input type="text" readonly class="form-control" id="staticWeight" value="{{ start_weight }}">
+                    </div>
+                    <label for="staticPWt" class="col-sm-2 col-form-label text-right">Projected weight:</label>
+                    <div class="col-sm-4">
+                        <input type="text" readonly class="form-control" id="staticPWt" value="{{ proj_weight }}">
+                    </div>
+                </div>
+                <div class="input-group px-1 px-md-3">
+                    <select class="form-control" id="id_week-select">
+                    </select>
+                </div>
+                <a style="color:white;" class="btn btn-lg btn-primary d-flex flex-fill justify-content-center my-3 mx-0 m-md-3" id="saveButton"><span>Save changes</span></a>
+            </div>
+        {% endwith %}
+    {% endif %}
+    <div class="row" id="mpc" style="display:none;">
+    </div>
+
+    <script>
+        let csrfToken = '{{ csrf_token }}';
+        let mealPlan = {{ meal_plan|safe }};
+        const weeks = Object.keys(mealPlan);
+        const dayToDayOfWeek = {"0":"Monday", "1":"Tuesday", "2":"Wednesday", "3":"Thursday", "4":"Friday", "5":"Saturday", "6":"Sunday"};
+        let mealValues;
+        let unitKey = 'gram';
+        const uMult = {'oz':28.35, 'lb':453.59237, 'gram':1, 'piece':1, };
+        const uMultKeys = Object.keys(uMult);
+        
+
+        function weirdTime(timeStr) {
+            let hours = timeStr.slice(0,2);
+            let hourInt = parseInt(hours);
+            if (hourInt < 12) {
+                var AMPM = 'AM';
+            } else {
+                var AMPM = 'PM'
+                if (hourInt > 12) {
+                    hourInt = hourInt - 12;
+                };
+            };
+            let hourStr = "0" + String(hourInt);
+            hourStr = hourStr.slice(-2);
+            return hourStr + ':' + timeStr.slice(2,4) + AMPM;
+        }; 
+
+
+        function cleanString(input) {
+            return input.replace(/\W/g, '').toLowerCase();
+        };
+
+
+        function wrapTag(tag, item, iClass, iId, iAttr) {
+            if (iClass != "") {
+                iClass = " class='"+ iClass + "'";
+            };
+            if (iId != '') {
+                iId = " id='"+ iId + "' ";
+            };
+            if (iAttr != '') {
+                iAttr = " " + iAttr;
+            };
+            return "<" + tag + iClass + iId + iAttr + ">" + item + "</" + tag +  ">";
+        };
+
+
+        function wrapCol(values) {
+            return wrapTag("div", values, "col d-flex px-0 px-md-3", "", "");
+        };
+
+
+        function buildNutriTable(nutriValues, dayId) {
+            let specialFields = ['Kcals', 'Proteins', 'Carbs', 'Fats'];
+            let keys = Object.keys(nutriValues);
+
+            let nutriTable = "";
+            for (let key of keys) {
+                let addG = 'g';
+                if (key == 'Kcals' ) {
+                    addG = '';
+                }
+                let keyRow = "";
+                let keyCols = wrapTag("div", key, "col", "", 'style="border-bottom:1px solid rgba(0,0,0,0.3);"');
+                keyCols += wrapTag("div", Math.round(nutriValues[key] * 10) / 10 + addG, "col", "id_" + cleanString(key) + "-" + dayId, 'style="border-bottom:1px solid rgba(0,0,0,0.3);"');
+                if (specialFields.includes(key)) {
+                    keyRow += wrapTag("div", keyCols, "row py-1 mx-0", "", "");
+                } else {
+                    keyRow += wrapTag("div", keyCols, "row py-1 mx-0", "", "style='display:none;'");
+                };
+                nutriTable += keyRow;
+            };
+            return nutriTable;
+        };
+
+
+        function addMealValues(m, mId, dId) {
+            mealValues['meals'][mId] = {
+                'Kcals': m['kc'],
+                'Proteins': m['pr'],
+                'Carbs': m['ca'],
+                'Sugars': m['su'],
+                'Fibers': m['fi'],
+                'Fats': m['fa'],
+                'Sat. fats': m['sf'],
+                'Unsat. fats': m['uf'],
+                'Salt': m['sal']
+                };
+
+            let keys = Object.keys(mealValues['days'][dId]);
+            let mealKeys = Object.keys(mealValues['meals'][mId]);
+
+            for (let key of mealKeys) {
+                if (keys.includes(key)) {
+                    mealValues['days'][dId][key] += mealValues['meals'][mId][key];
+                } else {
+                    mealValues['days'][dId][key] = mealValues['meals'][mId][key];
+                };
+            }
+        };
+
+
+        function buildIngredientList(ingObj, ingId, comment) {
+            if (unitKey != 'gram') {
+                var round = 10;
+            } else {
+                var round = 1;
+            };
+            let mealIngs = "";
+            let ingKeys = Object.keys(ingObj);
+            for (let k = 0; k < ingKeys.length; k++) {
+                let units = ingObj[ingKeys[k]]['u'];
+                for (let unit of units) {
+                    if ( unit != 'piece' ) {
+                        unit = unitKey;
+                        let qty = Math.round((parseFloat(ingObj[ingKeys[k]]['q']) / uMult[unitKey]) * round) / round;
+                        qty = wrapTag("span", qty, "qty-unit", "", "");
+                        var tagVals = ["div", qty + " " + unit + " " + ingKeys[k].toLowerCase(), "", "", ""];
+                    } else {
+                        let qty = Math.round(parseFloat(ingObj[ingKeys[k]]['q']) * round) / round;
+                        var tagVals = ["div", qty + " " + ingKeys[k].toLowerCase(), "", "", ""];
+                    };
+                    mealIngs += wrapTag(...tagVals);
+                };
+            };
+            let mealId = ingId.split('_')[2];
+            let dayId = mealId.split('m')[0];
+            mealIngs = wrapTag("div", mealIngs, "", "", "");
+            let comments = comment.split('\n')
+            comment = "";
+
+            for (let com of comments) {
+                if (com != '') {
+                    comment += wrapTag("div", com, "", "", "");
+                };
+            }
+
+            let mealNutriTable = buildNutriTable(mealValues['meals']['id_meal_'+mealId], mealId);
+            return {'ingredients': mealIngs, 'comments': comment, 'nutrival': mealNutriTable};
+        };
+
+
+        function buildCard(tabs, addClass, addId, addAttr) {
+            let tabKeys = Object.keys(tabs);
+            let activeKeys = ['Ingredients', 'Meals'];
+            if (addId != "") {
+                var cbAddId = 'cb-'+ addId;
+            } else {
+                var cbAddId = '';
+            };
+            if (tabKeys.length > 1) {
+                var cardBody = "";
+                var header = "";
+                for (let i = 0; i < tabKeys.length; i++) {
+                    if ( !activeKeys.includes(tabKeys[i]) ) {
+                        var active = '';
+                    } else {
+                        var active = 'active';
+                    };
+                    if (tabs[tabKeys[i]] != '' ) {
+                        if (tabKeys[i] != 'dayText') {
+                            let divId = cleanString(tabKeys[i]) + '-' + cbAddId;
+                            header += wrapTag("li", wrapTag("a", tabKeys[i], "nav-link " + active, "tab-"+divId, 'data-toggle="tab" href="#' + divId + '" role="tab" aria-controls="home" aria-selected="true"'),"nav-item", "", "");
+                            if (active != '' ) {
+                                active = 'show ' + active;
+                            };
+                            cardBody += wrapTag("div", tabs[tabKeys[i]], "tab-pane " + active, divId, 'role="tabpanel" aria-labelledby=' + 'tab-'+divId);
+                        };
+                    };
+                };
+                if (tabKeys.includes('dayText')) {
+                    var dayText = wrapTag("div",wrapTag("h5", tabs['dayText'], "" + "", "", ""),"row justify-content-center","","");
+                } else {
+                    var dayText = "";
+                }
+                header = wrapTag("div", dayText + wrapTag("ul", header, "nav nav-tabs card-header-tabs pull-xs-left", "", "role='tablist'"), "card-header", "", "");
+                cardBody = wrapTag("div", cardBody, "tab-content container", "", "");
+            } else {
+                header = wrapTag("div", tabKeys[0], "card-header", "", "");
+                cardBody = wrapTag("div", tabs[tabKeys[0]], "", cbAddId, "");
+            };
+            cardBody = wrapTag("div", cardBody, "card-text", "", "");
+            cardBody = wrapTag("div", cardBody, "card-body mx-0 mx-md-1 px-1", "", "");
+            return wrapTag("div", header + cardBody, "card " + addClass, addId, addAttr);
+        };
+
+
+        function getTimes(week, day) {
+            return Object.keys(mealPlan[week][day]).sort();
+        };
+
+
+        function getDayObject(week, day) {
+            return mealPlan[week][day];
+        };
+
+
+        function buildAccordeon(context, parId) {
+            let names = Object.keys(context);
+
+            let accCont = "";
+            let j = 0;
+            for (let name of names) {
+                let id = context[name]['id'];
+                let content = context[name]['content'];
+                if (content != '' ) { 
+                    let show = '';
+                    if (j == 0) {
+                        let show = 'show';
+                    }
+                    accCont += wrapTag("div",
+                                    wrapTag("div",
+                                            wrapTag("div", name, "text-center mb-0", "", ""),
+                                        "card-header","header_" + id, 'data-toggle="collapse" data-target="#col_' + id + '" aria-expanded="true" aria-controls="col_' + id +'"') + 
+                                    wrapTag("div",
+                                            wrapTag("div", content, 'card-body', '', ''),
+                                        "collapse " + show, "col_" + id, 'aria-labelledby="header_' + id + '" data-parent="#acc-' + parId + '"'),
+                                "card", "", "");
+                    j += 1;
+                };
+            };
+
+            accCont = wrapTag("div", accCont,"my-3","acc-" + parId,"");
+            return accCont;
+        };
+
+
+        function fillDayCard(week, day, dayId) {
+            let comments = "";
+            let meals = "";
+            let ingredients = "";
+            let nutrivals = "";
+            let times = getTimes(week, day);
+            let dayObject = getDayObject(week, day);
+            mealValues['days'][dayId] = {};
+            for (let j = 0; j < times.length; j++) {
+
+                let mealObj = dayObject[times[j]];
+                let alternativesList = mealObj['a'];
+                let choices = "";
+                for (let choice of alternativesList) {
+                    let valList =["option", choice[1], "", "", "value='" + choice[0] + "'"];
+                    if (choice[1] == mealObj['na']) {
+                        valList[valList.length - 1] = valList[valList.length - 1] + ' selected';
+                    };
+                    choices += wrapTag(...valList);
+                };
+                let addId = dayId + "m" + String(j);
+
+                let altId = "id_alternative_" + addId;
+                let mealId = "id_meal_" + addId;
+                let ingId = "id_ing_" + addId;
+                let comId = "id_com_" + addId;
+                let nutId = "id_nut_" + addId;
+
+                let labelAltMeal = wrapTag("div", wrapTag("span", weirdTime(times[j]), "input-group-text", "labelForAlt" + mealId, ''), "input-group-prepend", "", "");
+                let inpAlt = wrapTag("select", choices, "form-control", altId, " aria-describedby='labelForAlt" + mealId + "'");
+                let seeMoreMeal = wrapTag("div", wrapTag("a", "", "btn btn-primary", "", 'data-toggle="collapse" href="#div_' + ingId + '" role="button" aria-expanded="false" aria-controls="div_' + ingId + '"'), "input-group-append", "", "");
+
+                let alternative = wrapTag("div",wrapTag("div", labelAltMeal + inpAlt + seeMoreMeal, "input-group", "", ""),"col-12 mx-0","","");
+
+                let ingObj = mealObj['i'];
+                let comment = mealObj['co'];
+                addMealValues(mealObj, mealId, dayId);
+                let ingComNutri = buildIngredientList(ingObj, ingId, comment);
+
+                let context = {'Ingredients': {'id': ingId, 'content': ingComNutri['ingredients']},
+                                'Comments': {'id': comId, 'content': ingComNutri['comments']},
+                                'Nutritional value': {'id':nutId, 'content': ingComNutri['nutrival']}};
+
+
+                let mealAccord = wrapTag("div", buildAccordeon(context, mealId), "collapse flex-fill", "div_" + ingId, '');
+                let meal = wrapTag("div", alternative + wrapTag("div",mealAccord,"d-flex d-lg-none col-12","",""), "row my-3", "", "");
+                meals += meal;
+
+                let mealTitle = wrapTag("div", weirdTime(times[j]) + ' ' + mealObj['na'] + ':', "font-weight-bold mt-3", "", "");
+                // var mealQtyButtons = wrapTag("div", wrapTag("select", "<option value='oz'>oz</option><option value='lb'>lb</option><option value='gram'>gram</option>"), "", "", "");
+
+                let ingredient = wrapTag("div", mealTitle + ingComNutri['ingredients'], "collapse show", "div_" + ingId, "");
+                ingredients += ingredient;
+
+                if (comment != '') {
+                    let comment = wrapTag("div", mealTitle + ingComNutri['comments'], "collapse show", "div_" + ingId, "");
+                    comments += comment;
+                };
+
+                let nutrival = wrapTag("div", mealTitle + ingComNutri['nutrival'], "collapse show", "div_" + ingId, "");
+                nutrivals += nutrival;
+            };
+            
+            let context = {};
+            context['Ingredients'] = ingredients;
+            context['Comments'] = comments;
+            context['Nutritional value'] = nutrivals;
+
+            let ingredientCard = wrapTag("div", buildCard(context, "", dayId, ""), "d-none d-lg-inline col-lg-6 mx-0", "", "");
+            let mealDiv = wrapTag("div", meals, "col-12 col-lg-6 mx-0 my-auto", "", "");
+            let mealRow = wrapTag("div", mealDiv + ingredientCard, "row", "", "");
+            let nutriTable = buildNutriTable(mealValues['days'][dayId], dayId);
+            let nutriDiv = nutriTable;
+            return {'Meals':mealRow, 'Nutritional values total':nutriDiv};
+        };
+
+
+        function emptyAndFillDayCard(week, day, dayId) {
+            let dayCard = {}
+            dayCard['dayText'] = dayToDayOfWeek[day];
+            let restDayCard = fillDayCard(week, day, dayId);
+            for (let k in restDayCard) { dayCard[k] = restDayCard[k] }
+            $('#div_c_' + dayId).empty();
+            $('#div_c_' + dayId).append(buildCard(dayCard, "mx-0 mx-auto my-3 mx-md-3", dayId, ""));
+        }
+
+
+        function buildMealPlan(week) {
+            mealValues = {'meals':{},'days':{}};
+            if (weeks.includes(week)) {
+                $('#mpc').empty();
+                let days = Object.keys(mealPlan[week]);
+                for (let i = 0; i < days.length; i++) {
+                    let day = String(i);
+                    let dayId = 'd' + day;
+                    let dayStr = 
+                    $('#mpc').append(wrapTag("div", "", "col-12", 'div_c_' + dayId, ""));
+                    emptyAndFillDayCard(week, day, dayId)
+                };
+            };
+        };
+
+
+        function changeWeekOptions() {
+            let selOpt = "";
+            let wks = [...Array(weeks.length).keys()];
+            for (let week of wks) {
+                selOpt += wrapTag("option", "Week " + String(parseInt(week) + 1), "text-center", "", "value='" + week + "'");
+            };
+            $('#id_week-select').empty().append(selOpt);
+        };
+
+
+        function rebindChangeMeal() {
+            $('select[id*="id_alternative"]').off('change.meals');
+            $('select[id*="id_alternative"]').on('change.meals', function() {
+                changeMeal($(this));
+            })
+        };
+
+        function uploadMealPlan() {
+            $.ajax({
+                type: "POST",
+                url: "{% url 'mealplans:edit-mealplan' meal_plan_id %}",
+                dataType: "JSON",
+                data: {
+                    'csrfmiddlewaretoken': csrfToken,
+                    'mealPlanData': JSON.stringify(mealPlan)
+                },
+                success: function(data) {
+                    $('#successUpload').remove();
+                    $('#failureUpload').remove();
+                    if (data['status_code'] == 200) {
+                        $('#mpc').before("<div id='successUpload' class='alert alert-success text-center' role='alert'>" + data['message'] + "</div>");
+                    } else {
+                        $('#mpc').before("<div id='failureUpload' class='alert alert-danger text-center' role='alert'>" + data['message'] + "</div>");
+                    };
+                },
+                error: function(xhr, textStatus, error) {
+                    console.log(xhr.responseText);
+                    console.log(xhr.statusText);
+                    console.log(textStatus);
+                    console.log(error)
+                    $('#successUpload').remove();
+                    $('#submitButton').before("<div id='failureUpload' class='alert alert-danger text-center' role='alert'>Something went wrong. Try again later.</div>");
+                }
+            })
+        };
+        
+        function changeMeal(elem) {
+            let dmId = elem.attr('id').split('_')[2];
+            let day = dmId.split('m')[0].split('d')[1];
+            let dayId = 'd' + day;
+            let mNumber = parseInt(dmId.split('m')[1]);
+            let week = $('#id_week-select').val();
+            let times = getTimes(week, day);
+            let dayObj = getDayObject(week, day);
+            let oldMeal = dayObj[times[mNumber]];
+            let alternatives = oldMeal['a'];
+            let mealPk = elem.val();
+            let mealName = $('#' + elem.attr('id') + ' option:selected').text();
+
+            $.ajax({
+                type: "GET",
+                url: "{% url 'api:get-item' 'alternative_meal' %}",
+                dataType: "JSON",
+                data: {
+                    meal_kcal: oldMeal['kc'],
+                    alternatives: JSON.stringify(alternatives),
+                    meal_pk: mealPk,
+                    meal_plan_pk: {{ meal_plan_id }},
+                },
+                success: function(data) {
+                    if (data['status_code'] == '404') {
+                        alert(data['message']);
+                        location.href = "{% url 'mealplans:mealplans' %}";
+
+                    } else {
+                        if (data['status_code'] == '200') {
+                            mealPlan[week][day][times[mNumber]] = data['meal_dict'];
+                            emptyAndFillDayCard(week, day, dayId);
+                            // fillDayCard(week, day, dayId);
+                            rebindChangeMeal();
+
+                        } else {
+                            if (data['status_code'] == '201') {
+                                mealPlan = JSON.parse(JSON.parse(data['meal_plan']));
+                                buildMealPlan(week);
+                                rebindChangeMeal();
+                                alert("Couldn't find " + mealName + ". Updated your meal plan.");
+                            };
+                        };
+                    };
+                },
+                error: function(xhr, textStatus, error) {
+                    console.log(xhr.responseText);
+                    console.log(xhr.statusText);
+                    console.log(textStatus);
+                    console.log(error)
+                }
+            })
+        };
+
+        var projMain = {{ proj_maintenance|safe}};
+        $(document).ready(function() {
+            let week = weeks[0];
+            buildMealPlan(week);
+            changeWeekOptions();
+            $('#mpc').show();
+
+            $('#id_week-select').on('change', function() {
+                week = $(this).val();
+                buildMealPlan(week);
+                rebindChangeMeal();
+            });
+            rebindChangeMeal();
+
+            $('#saveButton').on('click', function() {
+                uploadMealPlan();
+            })
+        })
+
+
+    </script>
+{% endblock %}

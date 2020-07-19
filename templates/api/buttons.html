@@ -1,0 +1,7 @@
+<div class="d-flex flex-wrap justify-content-center my-3">
+    {% for bname,burl in buttons.items %}
+    <a href="{{burl}}">
+        <button class="btn btn-primary btn-lg profile-home-box m-1 mx-md-3">{{bname}}</button>
+    </a>
+    {% endfor %}
+</div>

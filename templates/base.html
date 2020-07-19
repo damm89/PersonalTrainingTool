@@ -1,0 +1,70 @@
+{% extends "empty_base.html" %}
+{% load static %}
+
+{% block stylesheet %}
+{% endblock %}
+
+{% block mainmenu %}
+	<nav class="navbar navbar-dark bg-dark navbar-expand-md" role="navigation">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#mmenu" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+		<div class="collapse navbar-collapse justify-content-end" id="mmenu">
+			<ul class="navbar-nav nav">
+				<li class="nav-item text-center">
+					<a class="nav-link" href="/">
+						Home
+					</a>
+				</li>
+				<li class="nav-item text-center" style="display:none;">
+					<a class="nav-link" href="/pricing/">
+						Pricing
+					</a>
+				</li>
+				<li class="nav-item text-center" style="display:none;">
+					<a class="nav-link" href="/about/">
+						About
+					</a>
+				</li>
+				<li class="nav-item text-center" style="display:none;">
+					<a class="nav-link" href="/be-an-affiliate/">
+						Affiliate
+					</a>
+				</li>
+				{% if user.is_authenticated %}
+				<li class="nav-item text-center">
+					<a class="nav-link" href="{% url 'dashboard:home' %}">
+						Profile
+					</a>
+				</li>
+				{% endif %}
+				<li class="nav-item text-center">
+					<a class="nav-link" href="/support/">
+						Support
+					</a>
+				</li>
+				{% if user.is_authenticated %}
+					<li class="nav-item text-center">
+						<form method="post" id="lo54" action="{% url 'account_logout' %}">
+							{% csrf_token %}
+							{% if redirect_field_value %}
+							<input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+							{% endif %}
+						</form> 
+						<a class="nav-link" href="#" onclick="document.getElementById('lo54').submit();">Log out</a>
+					</li>
+				{% else %}
+					<li class="nav-item text-center">
+						<a class="nav-link" href="{% url 'account_login' %}">
+							Login/Signup
+						</a>
+					</li>
+				{% endif %}
+			</ul>
+		</div>
+	</nav>
+	{% block submenu %}
+	{% endblock %}
+	{% block content %}
+    {% endblock %}
+{% endblock %}

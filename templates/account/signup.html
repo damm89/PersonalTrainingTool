@@ -1,0 +1,38 @@
+{% extends "account/base.html" %}
+{% load crispy_forms_tags %}
+{% load account socialaccount %}
+{% load static %}
+{% block head_title %}Sign up{% endblock %}
+
+{% block stylesheet %}
+<link rel="stylesheet" href="{% static '/css/social.css' %}">
+{% endblock %}
+
+{% block h3 %}
+    Sign up or <a href="{{ login_url }}">login</a>
+{% endblock %}
+
+{% block content %}
+
+    {% comment %}
+        {% get_providers as socialaccount_providers %}
+        {% if socialaccount_providers %}
+            {% include "socialaccount/snippets/provider_list.html" with process="login" %}
+            {% include "socialaccount/snippets/login_extra.html" %}
+        {% endif %}
+    {% endcomment %}
+    <form class="signup my-3" id="signup_form" method="POST" action="{% url 'account_signup' %}">
+        {% csrf_token %}
+        {{ form|crispy }}
+        {% if redirect_field_value %}
+        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+        {% endif %}
+        <div id="gbutton"></div>
+        <button class="btn btn-lg btn-primary btn-block primaryAction" type="submit">Sign up</button>
+    </form>
+
+    <script>
+        $('.google').addClass("btn btn-primary")
+    </script>
+{% endblock %}
+

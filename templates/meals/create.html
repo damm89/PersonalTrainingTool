@@ -1,0 +1,170 @@
+{% extends "meals/base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block head_title %}
+    {{purpose|capfirst}} meal
+{% endblock %}
+
+{% block morestyles %}
+    <link rel="stylesheet" href="{% static 'css/tagify/tagify.css' %}">
+    <script src="{% static 'js/django-dynamic-formset/jquery.formset.js' %}"></script>
+    <script src="{% static 'js/tagify/tagify.min.js' %}"></script>
+{% endblock %}
+
+{% block profilecontent %}
+    <h3 class="text-center my-3">{{purpose|capfirst}} meal</h3>
+    {% if messages %}
+        {% for message in messages %}
+            {% if 'ilovepancakesclientaccounts' in message.tags %}
+                {{ message|safe }}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
+    <div class="d-flex flex-row justify-content-center align-content-stretch">
+        <div class="align-self-stretch">
+            <div class="row mx-0 px-0">
+                <div class="col-12 px-0 text-center" style='border-bottom:1px solid black;'>
+                    Leanness
+                </div>
+                <div class="col-12 px-1 text-center">
+                    <span id="leanness">{{meal.leanness}}%</span>
+                </div>
+            </div>
+        </div>
+        <div class="align-self-stretch">
+            <div class="row mx-0 px-0">
+                <div class="col-12 px-0 text-center" style='border-bottom:1px solid black;'>
+                    Kcals
+                </div>
+                <div class="col-12 px-1 text-center">
+                    <span id="kcals">{{meal.kcals}}</span>
+                </div>
+            </div>
+        </div>
+        <div class="align-self-stretch">
+            <div class="row mx-0 px-0">
+                <div class="col-12 px-0 text-center" style='border-bottom:1px solid black;'>
+                    Protein
+                </div>
+                <div class="col-12 px-1 text-center">
+                    <span id="protein">{{meal.protein}}</span>
+                </div>
+            </div>
+        </div>
+        <div class="align-self-stretch">
+            <div class="row mx-0 px-0">
+                <div class="col-12 px-0 text-center" style='border-bottom:1px solid black;'>
+                    Carbs
+                </div>
+                <div class="col-12 px-1 text-center">
+                    <span id="carbs">{{meal.carbs}}</span>
+                </div>
+            </div>
+        </div>
+        <div class="align-self-stretch">
+            <div class="row mx-0 px-0">
+                <div class="col-12 px-0 text-center" style='border-bottom:1px solid black;'>
+                    Fats
+                </div>
+                <div class="col-12 px-1 text-center">
+                    <span id="fats">{{meal.fats}}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if purpose == 'add' %}
+    <form class="meal" id="mealForm" method="POST" action="{% url 'meals:create-meal' %}" onsubmit="return validateMealForm()">
+    {% else %}
+    <form class="meal" id="mealForm" method="POST" action="{% url 'meals:edit-meal' meal.id %}" onsubmit="return validateMealForm()">
+    {% endif %}
+        {% csrf_token %}
+        {{ meal_form.name|as_crispy_field }}
+        {{ meal_ingredient_formset.management_form }}
+        <div class="d-flex justify-content-center">
+            <table class="table table-striped">
+                <thead>
+                    <tr class="d-flex flex-row flex-wrap">
+                        <th class="col-5 col-xl-3 px-0 px-sm-1 px-md-3">Quantity</th>
+                        <th class="col-6 col-md-7 col-xl-8 px-0 px-sm-1 px-md-3">Ingredient</th>
+                        <th class="col-1 px-1"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for meal_ingredient_form in meal_ingredient_formset %}
+                <tr class="meal-ingredient-formset d-flex flex-row flex-wrap">
+                    <td class="col-4 col-xl-3 px-0 px-sms-1 px-md-3" style="border-top:0px;">
+                        <div class="input-group-prepend">
+                            {{ meal_ingredient_form.original_quantity|as_crispy_field }}
+                            {{ meal_ingredient_form.amount_type|as_crispy_field }}
+                        </div>
+                    </td>
+                    <td class="col-6 col-md-7 col-xl-8 px-0 px-sm-1 px-md-3" style="border-top:0px;">
+                        <input type="text" list="id_form-{{ forloop.counter0 }}-datalist" name="{{ meal_ingredient_form.ingredient_name.html_name }}" placeholder="Search..." 
+                            class="textinput textInput form-control ingredient-search" id="{{ meal_ingredient_form.ingredient_name.id_for_label }}" 
+                            {% if meal_ingredient_form.ingredient.value != None %} 
+                            value="{{ meal_ingredient_form.initial.name|stringformat:'s' }}"{% endif %} required disabled>
+                        <datalist id="id_form-{{ forloop.counter0 }}-datalist">
+                            {% if meal_ingredient_form.ingredient.value != None %}
+                            <option class="dl-option" data-id="{{ meal_ingredient_form.initial.ingredient }}" value="{{ meal_ingredient_form.initial.name|stringformat:'s' }}">{{ meal_ingredient_form.initial.name|stringformat:'s' }}</option>
+                            {% endif %}
+                        </datalist>
+                    </td>
+                    {{ meal_ingredient_form.ingredient }}
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {{ meal_form.comment|as_crispy_field }}
+        <div class="input-group">
+            {{ meal_form.add_ing_comment }}
+            <label class="col-form-label" for="{{meal_form.add_ing_comment.id_for_label}}">Also use ingredient comments</label>
+        </div>
+        {{ meal_form.category|as_crispy_field }}
+        <hr>
+        {% if redirect_field_value %}
+        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+        {% endif %}
+        <a class="btn btn-lg btn-primary btn-block primaryAction my-3" id="fakeSubmit" type="submit" style="color:white;">{{purpose|capfirst}} Meal</a>
+        <button style="display:none;" id="submitButton"></button>
+    </form>
+
+    <script>
+        $('div[id*="-original_quantity"]').addClass("w-100");
+        $('.meal-ingredient-formset').formset({
+            addText: 'Add ingredient',
+            deleteText: '<span class="fa fa-trash"></span>',
+            addCssClass: 'add-row btn btn-primary',
+            deleteCssClass: 'delete-row btn btn-primary'
+        });
+        var categoryInput = document.querySelector('#id_category'),
+        tagify = new Tagify(categoryInput, {
+            whitelist : {{ category_data_list|safe }},
+            dropdown:{
+                    enabled: 0,
+                    maxItems: 100
+                },
+        });
+        $('tags').addClass('textinput textInput form-control');
+        var getIngredientListUrl = "{% url 'api:get-view' 'ingredients' %}";
+        var getIngredientDataUrl = "{% url 'api:get-item' 'ingredient_data' %}";
+    </script>
+    <script src="{% static 'js/meals/create_meal.js' %}"></script>
+    <script>
+        var validated;
+        $(document).ready(function() {
+            $('#fakeSubmit').on('click',function() {
+                validated = [];
+                $('input').each(function() {
+                    validated.push(this.reportValidity());
+                });
+                if (!validated.includes(false)) {
+                    $('#submitButton').click();
+                };
+            });
+        });
+    </script>
+{% endblock %}

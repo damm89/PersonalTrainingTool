@@ -1,0 +1,10 @@
+{% extends "account/email/base.html" %}
+{% load account %}
+
+{% block preheader %}Please confirm your email{% endblock %}
+{% block emailcontent %}Thank you for signing up. Please confirm your email address.{% endblock %}
+{% block buttonlink %}{{ activate_url }}{% endblock %}
+{% block linktext %}Confirm email{% endblock %}
+{% block signature %}
+<div>Thank you!</div>
+{% endblock %}

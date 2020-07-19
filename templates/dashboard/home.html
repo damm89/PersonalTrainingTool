@@ -1,0 +1,29 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+
+{% block head_title %}Dashboard{% endblock %}
+
+{% block profilecontent %}
+<div class="container">
+        <div class="d-flex flex-wrap justify-content-center my-3">
+            <a class="px-1 px-md-3" href="{% url 'clientaccounts:create-client-account' %}">
+                <button class="btn btn-primary btn-lg profile-home-box my-3">Add account</button>
+            </a>
+
+            <a class="px-1 px-md-3" href="{% url 'ingredients:create-ingredient' %}">
+                <button class="btn btn-primary btn-lg profile-home-box my-3">Add ingredient</button>
+            </a>
+            <a class="px-1 px-md-3" href="{% url 'meals:create-meal' %}">
+                <button class="btn btn-primary btn-lg profile-home-box my-3">Add meal</button>
+            </a>
+
+            <a class="px-1 px-md-3" href="{% url 'mealplans:create-mealplan' %}">
+                <button class="btn btn-primary btn-lg profile-home-box my-3"> Add meal plan</button>
+            </a>
+        </div>
+    <hr>
+    
+    <div class="row">
+    </div>
+</div>
+{% endblock %}

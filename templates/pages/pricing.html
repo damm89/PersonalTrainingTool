@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block head_title %}
+    Plans & Pricing
+{% endblock %}
+
+{% block content %}
+<section class="pricing py-5">
+  <div class="container">
+    <div class="row">
+      <!-- Free Tier -->
+      <div class="col-lg-4">
+        <div class="card mb-5 mb-lg-0">
+          <div class="card-body">
+            <h5 class="card-title text-muted text-uppercase text-center">Single Plan</h5>
+            <h6 class="card-price text-center">$10<span class="period">/meal plan</span></h6>
+            <hr>
+            <ul class="fa-ul">
+              <li><span class="fa-li"><i class="fas fa-check"></i></span>Single profile</li>
+              <li><span class="fa-li"><i class="fas fa-check"></i></span>2 revisions</li>
+              <li><span class="fa-li"><i class="fas fa-check"></i></span>Access to nutritional database</li>
+              <li><span class="fa-li"><i class="fas fa-check"></i></span>Personal database of 100 food items</li>
+              <li><span class="fa-li"><i class="fas fa-check"></i></span>4 week plan</li>
+              <li class="text-muted"><span class="fa-li"><i class="fas fa-times"></i></span>Monthly Status Reports</li>
+            </ul>
+            <a href="#" class="btn btn-block btn-primary text-uppercase">Button</a>
+          </div>
+        </div>
+      </div>
+      <!-- Plus Tier -->
+      <div class="col-lg-4">
+        <div class="card mb-5 mb-lg-0">
+          <div class="card-body">
+            <h5 class="card-title text-muted text-uppercase text-center">10 Plans</h5>
+            <h6 class="card-price text-center">$50<span class="period">/10 meal plans</span></h6>
+            <hr>
+            <ul class="fa-ul">
+              <li><span class="fa-li"><i class="fas fa-check"></i></span><strong>10 Profiles</strong></li>
+              <li><span class="fa-li"><i class="fas fa-check"></i></span>2 revisions/plan</li>
+              <li><span class="fa-li"><i class="fas fa-check"></i></span>Access to nutritional database</li>
+              <li><span class="fa-li"><i class="fas fa-check"></i></span>Personal database of 1.000 food items</li>
+              <li><span class="fa-li"><i class="fas fa-check"></i></span>Up to 12 weeks single-purpose plans</li>
+              <li><span class="fa-li"><i class="fas fa-check"></i></span>No expiration of unused downloads*</li>
+            </ul>
+            <a href="#" class="btn btn-block btn-primary text-uppercase">Button</a>
+          </div>
+        </div>
+      </div>
+      <!-- Pro Tier -->
+      <div class="col-lg-4">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title text-muted text-uppercase text-center">Unlimited Plans/Month</h5>
+            <h6 class="card-price text-center">$100<span class="period">/month</span></h6>
+            <hr>
+            <ul class="fa-ul">
+              <li><span class="fa-li"><i class="fas fa-check"></i></span><strong>Unlimited profiles</strong></li>
+              <li><span class="fa-li"><i class="fas fa-check"></i></span>Unlimited revisions/plan</li>
+              <li><span class="fa-li"><i class="fas fa-check"></i></span>Access to nutritional database</li>
+              <li><span class="fa-li"><i class="fas fa-check"></i></span>Personal database of 10.000 food items</li>
+              <li><span class="fa-li"><i class="fas fa-check"></i></span>Up to 52-week dynamic cycles (muscle mass, fat loss, etc)</li>
+              <li><span class="fa-li"><i class="fas fa-check"></i></span>Phone support</li>
+              <li><span class="fa-li"><i class="fas fa-check"></i></span>Cancel any time</li>
+            </ul>
+            <a href="#" class="btn btn-block btn-primary text-uppercase">Button</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

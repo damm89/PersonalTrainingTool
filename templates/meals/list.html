@@ -1,0 +1,34 @@
+{% extends "meals/base.html" %}
+{% load static %}
+
+{% block head_title %}
+    Meals
+{% endblock %}
+
+{% block profilecontent %}
+    {% if messages %}
+        {% for message in messages %}
+            {% if 'ilovepancakesclientaccounts' in message.tags %}
+                {{ message|safe }}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
+    <script>
+        var listUrl = "{% url 'api:get-view' cat_str %}";
+        var delUrl = "{% url 'api:delete' cat_str 0 %}";
+        var editUrl = "{% url 'meals:edit-meal' 0 %}";
+        const cols = {{only|safe}};
+        const deletable = true;
+        const editable = true;
+    </script>
+
+    <div class="container">
+        {% if buttons %}
+            {% include "api/buttons.html" with buttons=buttons %}
+            <hr>
+        {% endif %}
+        {% include "empty_table.html" with item_str='meal' items_str='meals' cols=cols cat_str=cat_str items=meals url_str="meals:edit-meal" %}
+    </div>
+
+{% endblock %}

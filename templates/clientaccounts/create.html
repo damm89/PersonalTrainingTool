@@ -1,0 +1,184 @@
+{% extends "clientaccounts/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block head_title %}
+    {{purpose|capfirst}} client account
+{% endblock %}
+
+{% block profilecontent %}
+
+<h3 class="text-center my-3"> {{purpose|capfirst}} client account</h3>
+{% if messages %}
+    {% for message in messages %}
+        {% if 'ilovepancakesprofile' in message.tags %}
+            {{ message|safe }}
+        {% endif %}
+    {% endfor %}
+{% endif %}
+{% if purpose == 'add' %}
+<form class="profile" id="profile_form" method="POST" action="{% url 'clientaccounts:create-client-account' %}">
+{% else %}
+<form class="profile" id="profile_form" method="POST" action="{% url 'clientaccounts:edit-client-account' client_id %}">
+{% endif %}
+    {% csrf_token %}
+    <div class="row px-1 mx-1 px-sm-0 mx-lg-0">
+        <div class="col-12 col-lg-4 px-0 pr-lg-3">{{ form.name|as_crispy_field }}</div>
+        <div class="col-12 col-lg-5 px-0 px-lg-3">{{ form.email|as_crispy_field }}</div>
+    </div>
+    <div class="row px-1 mx-1 px-sm-0 mx-lg-0">
+        <div class="col-12 col-lg-2 px-0">{{ form.age|as_crispy_field }}</div>
+    </div>
+    <div class="row px-1 mx-1 px-sm-0 mx-lg-0">
+        <div class="col-12 col-lg-3 px-0 pr-lg-3">{{ form.gender|as_crispy_field }}</div>
+        <div class="col-12 col-lg-4 px-0 pl-lg-3">{{ form.activity_level|as_crispy_field }}</div>
+    </div>
+    <div class="row px-1 mx-1 px-sm-0 mx-lg-0">
+        <div class="col-auto pl-0">
+            <label class="col-form-label" for="id_heightcm_label">Height<span class="asteriskField">*</span></label>
+            <div class="input-group" id="id_heightcm_label">
+                <div class="input-group-append">
+                    {{form.height|as_crispy_field}}
+                    {{form.height_type|as_crispy_field}}
+                </div>
+                <div class="input-group-append" style="display:none;" id="lbl_htin">
+                    {{form.height_add|as_crispy_field}}
+                    <div class="input-group-text mb-3">in</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-auto pl-0">
+            <label class="col-form-label" for="id_weight_label">Weight<span class="asteriskField">*</span></label>
+            <div class="input-group" id="id_weight_label">
+                <div class="input-group-append">
+                    {{form.weight|as_crispy_field}}
+                    {{form.weight_type|as_crispy_field}}
+                </div>   
+                <div class="input-group-append" style="display:none;" id="lbl_wtlbs">
+                    {{form.weight_add|as_crispy_field}}
+                    <div class="input-group-text mb-3">lbs</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row px-1 mx-1 px-sm-0 mx-sm-0">
+        <div class="col-12 px-0">
+            {{ form.comments|as_crispy_field}}
+        </div>
+    </div>
+    <hr>
+    {% if redirect_field_value %}
+    <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+    {% endif %}
+    <button class="btn btn-lg btn-primary btn-block primaryAction my-3" type="submit">{{purpose|capfirst}} account</button>
+</form>
+
+<script>
+    function enterHtWt(valStr) {
+        if (valStr == "ht" ) {
+            var valArr = ["#{{form.height_type.id_for_label}}", "ft", "#{{form.height_add.id_for_label}}", "#{{form.height.id_for_label}}"];
+        } else {
+            var valArr = ["#{{form.weight_type.id_for_label}}", "st", "#{{form.weight_add.id_for_label}}", "#{{form.weight.id_for_label}}"];
+        };
+        var selected = $(valArr[0]).val();
+        var extra = false;
+        if (selected == valArr[1]) {
+            extra = $(valArr[2]).val();
+        };
+        var value = $(valArr[3]).val();
+        if ( value < 0 ) {
+            value = 0;
+        };
+        if (selected == "ft") {
+            if (value > 7) {
+                value = 7;
+            } else {
+                if (value < 0) {
+                    value = 0;
+                }
+            };
+        } else {
+            if ( selected == 'cm') {
+                if ( value > 250 ) {
+                    value = 250;
+                };
+            };
+        };
+
+        $(valArr[3]).val(value);
+        if (extra != false) {
+            if ( extra < 0 ) {
+                extra = 0;
+            } else {
+                if ( selected == 'ft' ) {
+                    if ( extra > 11) {
+                        extra = 11;
+                    }
+                } else {
+                    if ( selected == 'st' ) {
+                        if ( extra > 13.9 ) {
+                            extra = 13.9;
+                        };
+                    };
+                };
+            };
+        };
+        $(valArr[2]).val(extra);
+    };
+
+    function showLbs(elem) {
+        var wEl = $('#{{form.weight.id_for_label}}');
+        if (elem.val() == "st") {
+            wEl.val(Math.round(wEl.val()));
+            wEl.attr("step","1");
+            $('#{{form.weight_add.id_for_label}}').show();
+            $('#lbl_wtlbs').show();
+        } else {
+            wEl.attr("step","0.1");
+            $('#{{form.weight_add.id_for_label}}').hide();
+            $('#lbl_wtlbs').hide();
+        };
+    };
+
+    function showIn(elem) {
+        if (elem.val() == "ft") {
+            $('#{{form.height_add.id_for_label}}').show();
+            $('#lbl_htin').show();
+        } else {
+            $('#{{form.height_add.id_for_label}}').hide();
+            $('#lbl_htin').hide();
+        };
+    };
+
+    $(document).ready(function(){
+        showLbs($('#{{form.weight_type.id_for_label}}'));
+        showIn($('#{{form.height_type.id_for_label}}'));
+
+        $('#{{form.weight_type.id_for_label}}').on('change', function(){
+            showLbs($(this));
+        });
+        $('#{{form.height_type.id_for_label}}').on('change', function(){
+            showIn($(this));
+        });
+
+        $('#{{form.weight_type.id_for_label}}').on('change', function() {
+            enterHtWt("wt");
+        });
+        $('#{{form.weight.id_for_label}}').on('input', function() {
+            enterHtWt("wt");
+        });
+        $('#{{form.weight_add.id_for_label}}').on('input', function() {
+            enterHtWt("wt");
+        });
+
+        $('#{{form.height_type.id_for_label}}').on('change', function() {
+            enterHtWt("ht");
+        });
+        $('#{{form.height.id_for_label}}').on('input', function() {
+            enterHtWt("ht");
+        });
+        $('#{{form.height_add.id_for_label}}').on('input', function() {
+            enterHtWt("ht");
+        });
+    });
+</script>
+{% endblock %}

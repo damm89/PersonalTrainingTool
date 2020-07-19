@@ -1,0 +1,619 @@
+{% extends "mealplans/base.html" %}
+{% load crispy_forms_tags %}
+{% load staticfiles %}
+
+{% block head_title %}
+    {{purpose|capfirst}} mealplan template
+{% endblock %}
+
+{% block morestyles %}
+    <link rel="stylesheet" href="{% static 'css/tagify/tagify.css' %}">
+    <script src="{% static 'js/tagify/tagify.min.js' %}"></script>
+{% endblock %}
+
+
+{% block profilecontent %}
+    <h3 class="text-center my-3">{{purpose|capfirst}} mealplan template</h3>
+    {% if messages %}
+        {% for message in messages %}
+            {% if 'ilovepancakesclientaccounts' in message.tags %}
+                {{ message|safe }}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+    {% csrf_token %}
+    <div class="hideable-container" style="display:none;">
+        <label for="mealPlanTemplateName">Name*</label>
+        <input type="text" id="mealPlanTemplateName" class="textinput textInput form-control name-input" value={% if mpt_name %}"{{mpt_name}}"{% else %}""{% endif %} required>
+        <hr>
+        <div class="card day-card my-3" style="min-width:100%;" id="d1">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <h5 class="card-title m-0">Day 1</h5>
+                    <a href="javascript:void(0)" class="removeDay btn btn-primary" style='display:none;'><small>Remove day</small></a>
+                </div>
+                <div class="m-3">
+                    <div class="input-group-append">
+                        <label class="input-group-text">Daily Intake</label>
+                        <input type="number" class="textinput form-control maintenance-fraction" id="id_maintenance_fraction-d1" required style="max-width:5em;" min='0' max='999' value="100">
+                        <label class="input-group-text">%</label>
+                    </div>
+                </div>
+                <div class="d-flex flex-wrap justify-content-between meal-row py-3" id="d1m1" style="border-top:1px solid rgba(0,0,0,0.125);">
+                    <div class="align-bottom m-1 mx-md-3">
+                        <div class="hideThis justify-content-center">
+                            <p class="text-center">Time*</p>
+                        </div>
+                        <div class="d-flex justify-content-center">
+                            <select class="hours form-control px-0 px-md-1" style="width:4.5em;" id="hours-d1m1">
+                                <option value="12AM">12AM</option>
+                                <option value="1AM">1AM</option>
+                                <option value="2AM">2AM</option>
+                                <option value="3AM">3AM</option>
+                                <option value="4AM">4AM</option>
+                                <option value="5AM">5AM</option>
+                                <option value="6AM">6AM</option>
+                                <option value="7AM">7AM</option>
+                                <option value="8AM" selected>8AM</option>
+                                <option value="9AM">9AM</option>
+                                <option value="10AM">10AM</option>
+                                <option value="11AM">11AM</option>
+                                <option value="12PM">12PM</option>
+                                <option value="1PM">1PM</option>
+                                <option value="2PM">2PM</option>
+                                <option value="3PM">3PM</option>
+                                <option value="4PM">4PM</option>
+                                <option value="5PM">5PM</option>
+                                <option value="6PM">6PM</option>
+                                <option value="7PM">7PM</option>
+                                <option value="8PM">8PM</option>
+                                <option value="9PM">9PM</option>
+                                <option value="10PM">10PM</option>
+                                <option value="11PM">11PM</option>
+                            </select>
+                            <select class="minutes form-control px-0 px-md-1" style="width:3.5em;" id="minutes-d1m1">
+                                <option value="00" selected>00</option>
+                                <option value="15">15</option>
+                                <option value="30">30</option>
+                                <option value="45">45</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="align-bottom m-1 mx-md-3">
+                        <div class="hideThis justify-content-center">
+                            <p class="text-center" title="Percentage of daily calories">
+                                Amount*:&nbsp
+                                <small class="total-amount" style="color:red; -webkit-transition: all .5s ease; -moz-transition: all .5s ease; transition: all .5s ease;">
+                                    25%
+                                </small>
+                            </p>
+                        </div>
+                        
+                        <div class="justify-content-center">
+                            <div class="input-group-append">
+                                <input type="number" class="textinput meal-amount form-control" id="id_amount-d1m1" required style="max-width:5em;" min='0' max='100' value="25">
+                                <label class="input-group-text">%</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="align-bottom flex-grow-1 m-1 mx-md-3">
+                        <div class="hideThis justify-content-center">
+                            <p class="text-center">Meal Categories*</p>
+                        </div>
+                        <div class="d-flex justify-content-center">
+                            <input type="text" class="textinput textInput meal-categories flex-grow-1" id="id_form-d1m1" style="display:none;">
+                            <a href="javascript:void(0)" class="removeMeal btn btn-primary mx-1" style="display:none;"><span class="fa fa-trash"></span></a>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <a href="javascript:void(0)" class="addMeal btn btn-primary my-3"><small>Add meal</small></a>
+                    <a href="javascript:void(0)" class="dupDay btn btn-primary my-3"><small>Duplicate day</small></a>
+                </div>
+            </div>
+        </div>
+        <a href="javascript:void(0)" class="addDay btn btn-lg btn-primary btn-block my-3">Add day</a>
+        <hr>
+        {% if redirect_field_value %}
+        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+        {% endif %}
+        <a class="btn btn-lg btn-primary btn-block my-3 disabled" id="primaryAction" style="color:white;">{{purpose|capfirst}} Template</a>
+    </div>
+
+    <script>
+        var mealCategoriesList = {{cat_data_list|safe}};
+        var mealIdList = {{cat_id_list|safe}};
+        var idMealList = {}
+        for (meal in mealIdList) {
+            idMealList[mealIdList[meal]] = meal
+        };
+        var csrfToken = '{{ csrf_token }}';
+
+
+        function checkRemove() {
+            /*
+            Checks if a meal-row or day card needs a "remove"/trash bin button.
+            If there are more than 1 meal-rows in a day card or there are more than 1 day cards,
+            a delete button will be added.
+            */
+            $('.day-card').each(function() {
+                $(this).find('.meal-row .hideThis').hide();
+                var countMeal = $(this).find('.meal-row').length;
+                if (countMeal > 1) {
+                    $(this).find('.removeMeal').each(function(){
+                        $(this).show();
+                    });
+                } else {
+                    $(this).find('.removeMeal').hide();
+                };
+                $(this).find('.meal-row:first .hideThis').show();
+
+            });
+
+            var dayCount = $('.day-card').length;
+            if (dayCount > 1){
+                $('.removeDay').show();
+            } else {
+                $('.removeDay').hide();
+            };
+        };
+
+        var tagified = {};
+        function tagifyNewInput(newInput) {
+            /*
+            Tagify an input. Enters ID as key in tagified object
+            and tagified object as value.
+            */ 
+            var tagify = new Tagify(newInput, {
+                whitelist:mealCategoriesList,
+                enforceWhitelist: true,
+                dropdown:{
+                    enabled: 0,
+                    maxItems: 100
+                },
+            });
+            tagified[$(newInput).attr('id')] = tagify;
+        };
+
+
+        function changeTagifiedKeys() {
+            /* 
+            Chang tagified object values and keys after a change.
+            */ 
+            $('tags').remove();
+            var tagKeys = Object.keys(tagified);
+            for (key of tagKeys) {
+                delete tagified[key];
+            };
+            var mcInps = $('input.meal-categories');
+
+            for (mcInp of mcInps) {
+                tagifyNewInput(mcInp);
+            };
+        };
+
+        
+        function assignIdIdxToElements() {
+            /*
+            Cycles through day cards and their meal rows and assigns
+            them with the proper ids and titles based on their index.
+            */ 
+            var j = 1;
+            var dayCards = $('.day-card');
+            for (dayCard of dayCards) {
+                var elem = $(dayCard);
+                var dayPart = 'd' + String(j);
+                var oldDay = elem.attr('id');
+                let oldTitle = elem.find('.card-title');
+                oldTitle.text("Day " + String(j));
+                elem.attr('id', dayPart);
+                let oldKcals = elem.find('.maintenance-fraction');
+                oldKcals.attr('id', 'id_maintenance_fraction-' + dayPart);
+                
+                var mealrows = $('#' + dayPart + ' .meal-row');
+                var k = 1;
+                for (mealrow of mealrows) {
+                    let oldId = $(mealrow).attr('id');
+                    let newId = dayPart + 'm' + String(k);
+                    $(mealrow).attr('id', newId);
+                    $('#' + newId + ' input.meal-categories').attr('id', 'id_form-' + newId);
+                    $('#' + newId + ' input.meal-amount').attr('id', 'id_amount-' + newId);
+                    $('#' + newId + ' select.hours').attr('id', 'hours-' + newId);
+                    $('#' + newId + ' select.minutes').attr('id', 'minutes-' + newId);
+
+                    k += 1;
+                };
+                j += 1;
+            };
+
+            changeTagifiedKeys();
+        };
+
+
+        function removeClosestClassParent(elem, delThis) {
+            /*
+            Deletes meal-row or day card.
+            */ 
+            var oldElem = $(elem).closest(delThis);
+            oldElem.remove();
+            assignIdIdxToElements();
+        };
+        
+
+        function calcAmountDay(dayEl) {
+            /*
+            Makes sure the total meal distribution adds up to 100%
+            */ 
+            var oldVals = [];
+            $(dayEl).find('.meal-amount').each(function() {
+                oldVals.push(parseFloat($(this).val()));
+            });
+            var totalVal = Math.round(oldVals.reduce((a, b) => a + b, 0));
+            var pAmount = $(dayEl).find('.total-amount');
+
+            pAmount.text(totalVal+'%');
+            if (totalVal == 100) {
+                pAmount.attr('style','color:green;');
+            } else {
+                pAmount.attr('style','color:red;');
+            };
+
+            return 100-totalVal;
+        };
+
+
+        function calcAmount() {
+            /*
+            Calls calcAmountDay for every day-card class it can find.
+            */ 
+            $('.day-card').each(function() {
+                var _ = calcAmountDay(this);
+            });
+        };
+
+        function cleanOldElement(newEl) {
+            /*
+            Whenever you add a new day, not a duplicate day
+            an empty day card is required.
+            The copied day-card is cleaned/emptied through
+            this function.
+            */ 
+            $(newEl).find('.meal-row').not('.meal-row:first').remove();
+            var newInput = newEl.find("input.meal-categories");
+            var newInputId = newInput.attr('id');
+            $(newInput).val("");
+
+            var tagKeys = Object.keys(tagified);
+            if (tagKeys.includes(newInputId)) {
+                tagified[newInputId].removeAllTags();
+            };
+            var newInput2 = newEl.find("input.meal-amount");
+            $(newInput2).val("25");
+        };
+
+
+        function validateChoice(elem) {
+            /*
+            Makes sure the final choice of meal category is actually
+            part of the options given.
+            */
+
+            var optionFound = false;
+            var datalistOptions = mealCategoriesList;
+
+            try {
+                var tags = JSON.parse(elem.val());
+            } catch(err) {
+                tags = [''];
+            };
+
+            for (var i = 0; i < tags.length; i++){
+                for (var j = 0; j < datalistOptions.length; j++) {
+                    if (tags[i]['value'] == datalistOptions[j]) {
+                        optionFound = true;
+                        break;
+                    };
+                };
+            };
+
+            if (optionFound) {
+                return true
+            } else {
+                tagified[elem.attr('id')].addTags("Required");
+                return false
+            };
+        };
+
+
+        function appendElem(elem) {
+            /*
+            Clones the last element, changes the ID, appends it.
+            If it is a day card it is also cleaned/emptied.
+            */ 
+            var newEl = $(elem).prev().clone();
+            $(elem).prev().after(newEl);
+            assignIdIdxToElements();
+            if (newEl.hasClass('day-card')) {
+                cleanOldElement(newEl);
+            };
+        };
+
+
+        function addMealToTemplate(data, newDays, k) {
+            /*
+            Adds meal-row to day-card if there is more 
+            than 1 meal on that day.
+            Calls the appendElem function.
+            */
+            var newMeals = Object.keys(data[newDays[k]]);
+            if ( newMeals.length > 2 ) {
+                for (var i=2; i < newMeals.length; i++) {
+                    appendElem($('#' + newDays[k] + ' .addMeal').parent());
+                };
+            };
+        };
+
+
+        function buildTemplate(data) {
+            /*
+            Builds template by using the mptData loaded by Django.
+            First adds the required amount of days that are found in the data.
+            Then adds meals to those days and finally tagifies the inputs.
+            */
+            var newDays = Object.keys(data);
+            addMealToTemplate(data, newDays, 0)
+            if (newDays.length > 1) {
+                for (var i=1; i < newDays.length; i++) {
+                    appendElem($('.addDay'))
+                    addMealToTemplate(data, newDays, i)
+                };
+            };
+
+            var tagifiedKeys = Object.keys(tagified);
+            var idMealListKeys = Object.keys(idMealList);
+            for (day in data) {
+                $('#id_maintenance_fraction-'+day).val(data[day]['maintenance_fraction']);
+                delete data[day]['kcals'];
+
+                for (meal in data[day]) {
+                    if (tagifiedKeys.includes('id_form-'+meal)) {
+                        var newTags = [];
+                        var mealCats = data[day][meal]['mealCats'].split(';:');
+                        for (var i = 0; i < mealCats.length; i++) {
+                            var tagId = mealCats[i];
+                            if (idMealListKeys.includes(tagId)) {
+                                var newTag = idMealList[tagId];
+                                newTags.push(newTag);
+                            };
+                        };
+
+                        tagified['id_form-'+meal].addTags(newTags);
+                        $('#hours-'+meal).val(data[day][meal]['hour']);
+                        $('#minutes-'+meal).val(data[day][meal]['minutes']);
+                        $('#id_amount-'+meal).val(data[day][meal]['amount']);
+                    };
+                };
+            };
+        };
+
+
+        function defaultKcals(newEl) {
+            /*
+            Default maintenance-fraction should be 100.
+            */
+            let oldKcals = newEl.find('.maintenance-fraction');
+            oldKcals.val(100);
+        };
+
+
+        function duplicateDayEl(dayEl) {
+            /*
+            When you press duplicate day, this function is called.
+            It clones the current day and changes all the ids
+            of the day-cards and meal-rows.
+            */
+            let newDayEl = $(dayEl).clone();
+            $(dayEl).after(newDayEl);
+            assignIdIdxToElements();
+        };
+
+
+        function validateAmount(validated) {
+            /*
+            validates the sum of the meal percentages.
+            The sum needs to be exactly 100% otherwise
+            the meal distribution doesn't constitute a full day.
+            */
+            $('.day-card').each( function() {
+                var mealAmount = $(this).find('.total-amount').text();
+                mealAmount = parseInt(mealAmount.split('%')[0]);
+                if (mealAmount > 100) {
+                    validated.push(false);
+                    var warningAmount = $(this).find('.total-amount');
+                    $(this).find('.total-amount').animate({'font-size':'100%'},100);
+                    $(this).find('.total-amount').animate({'font-size':'80%'},100);
+                };
+                if (mealAmount < 100) {
+                    validated.push(false);
+                    var warningAmount = $(this).find('.total-amount');
+                    $(this).find('.total-amount').animate({'font-size':'100%'},100);
+                    $(this).find('.total-amount').animate({'font-size':'80%'},100);
+                };
+
+                if (mealAmount == 100) {
+                    validated.push(true);
+                }
+            });
+            return validated;
+        };
+
+
+        function validateTime(validated) {
+            /*
+            Validates the meal-row times. No duplicates intra day card are allowed.
+            */
+            var times = [];
+            $('.day-card').each( function() {
+                var dayId = $(this).attr('id');
+                $('#' + dayId + ' .meal-row').each( function() {
+                    var hour = $(this).find('select.hours');
+                    var minutes = $(this).find('select.minutes');
+                    var key = dayId + hour.val() + minutes.val();
+                    if (!times.includes(key)) {
+                        times.push(key);
+                    } else {
+                        hour[0].setCustomValidity('Each meal needs to have a unique time.');
+                        minutes[0].setCustomValidity('Each meal needs to have a unique time.');
+                        hour[0].reportValidity();
+                        minutes[0].reportValidity();
+                        validated.push(false);
+                    };
+                });
+            });
+            return validated;
+        };
+
+
+        function collectDayAndMealData() {
+            /*
+            In case the template is saved, all the data is collected
+            from each day-card and each meal-rows.
+            */
+            var data = {};
+            $('.day-card').each(function() {
+                var dayId = $(this).attr('id');
+                data[dayId] = {};
+                data[dayId]['maintenance_fraction'] = $('#id_maintenance_fraction-' + $(this).attr('id')).val();
+                $(this).find('.meal-row').each(function() {
+                    var mealEl = $(this);
+                    var mealId = mealEl.attr('id')
+                    var hour = mealEl.find('select.hours').val();
+                    var minutes = mealEl.find('select.minutes').val();
+                    var mealCats = JSON.parse(mealEl.find('input.meal-categories').val());
+                    var amount = mealEl.find('.meal-amount').val();
+
+                    var validCats = [];
+                    for (mealCat in mealCats) {
+                        var mealCatValue = mealCats[mealCat]['value'];
+                        if (mealCategoriesList.includes(mealCatValue.toLowerCase())) {
+                            validCats.push(mealIdList[mealCatValue.toLowerCase()])
+                        };
+                    };
+
+                    data[dayId][mealId] = {'hour':hour, 'minutes':minutes, 'mealCats':validCats.join(';:'), 'amount':amount};
+                });
+            });
+            return data;
+        };
+
+
+        var firstInput = document.querySelector('.meal-categories');
+        tagifyNewInput(firstInput);
+        
+        var mptData;
+        $(document).ready(function() {
+            $('#primaryAction').removeClass('disabled');
+            
+            {% if purpose == 'edit' %}
+            mptData = {{data|safe}};
+            buildTemplate({{data|safe}});
+            checkRemove();
+            {% endif %}
+
+
+            $(document).on('click', '.addDay',  function() {
+                appendElem(this);
+                checkRemove();
+                calcAmount();
+                
+                let newDay = $(this).prev();
+                defaultKcals(newDay);
+            });
+
+
+            $(document).on('click', '.addMeal',  function() {
+                let dayEl = $(this).closest('.day-card');
+                let incVal = calcAmountDay(dayEl);
+                appendElem($(this).parent());
+                checkRemove();
+                let lastAmount = $(dayEl).find('.meal-amount:last').val(incVal);
+                calcAmountDay(dayEl);
+            });
+
+            $(document).on('click', '.dupDay',  function() {
+                let dayEl = $(this).closest('.day-card');
+                duplicateDayEl(dayEl);
+                checkRemove();
+            });
+
+
+            $(document).on('click', '.removeMeal', function() {
+                let mealId = $(this).closest('.meal-row').attr('id');
+                removeClosestClassParent(this, '.meal-row');
+                checkRemove();
+                calcAmount();
+            });
+
+
+            $(document).on('click', '.removeDay', function() {
+                let dayId = $(this).closest('.day-card').attr('id');
+                removeClosestClassParent(this, '.day-card');
+                checkRemove();
+                calcAmount();
+            });
+
+            $(document).on('change', '.meal-amount', function() {
+                calcAmount();
+            });
+
+
+            $(document).on('click', '#primaryAction', function() {
+                var validated = [];
+
+                validated = validateAmount(validated);
+                validated = validateTime(validated);
+                
+                $('input.meal-categories').each(function() {
+                    validated.push(validateChoice($(this)));
+                });
+
+                $('input.name-input').each(function() {
+                    validated.push(this.reportValidity());
+                });
+
+                $('input.meal-amount').each(function() {
+                    validated.push(this.reportValidity());
+                });
+
+                $('input.maintenance-fraction').each(function() {
+                    validated.push(this.reportValidity());
+                });
+
+                if (!validated.includes(false)) {
+                    var dataDict = collectDayAndMealData();
+                    mptData = dataDict;
+                    $.ajax({
+                        type:'POST',
+                        url:"{% if purpose == 'add' %}{% url 'mealplans:create-mealplan-template' %}{% else %}{% url 'mealplans:edit-mealplan-template' mpt_id %}{% endif %}",
+                        dataType:'json',
+                        data: {
+                            'dataDict':JSON.stringify(dataDict),
+                            'csrfmiddlewaretoken':csrfToken,
+                            'name':$('#mealPlanTemplateName').val(),
+                        },
+                        success: function() {
+                            window.location['href'] = "{% url 'mealplans:mealplan-templates' %}";
+                        },
+                        error: function(xhr, textStatus, error) {
+                            $('#primaryAction').before("<div id='failureUpload' class='alert alert-danger text-center' role='alert'>Something went wrong. Try with different data.</div>");
+                        }
+                    });
+                };       
+            });
+            calcAmount();
+            $('.hideable-container').show();
+        });
+    </script>
+{% endblock %}

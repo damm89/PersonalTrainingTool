@@ -1,0 +1,129 @@
+{% load api_extras %}
+{% load static %}
+
+<div class="d-flex justify-content-center mt-1">
+    <div class="form-group">
+        <div class="input-group">
+            <input id="searchInput" list="acSe" class="form-control form-control my-1 oninput" disabled type="text" placeholder="Find {{item_str}}..." autocomplete="on">
+            <datalist id="acSe">
+            </datalist>
+            <div class="input-group-append">
+                <button class="btn btn-primary my-1" id="seB"><i class="fa fa-search" aria-hidden="true"></i></button>
+            </div>
+        </div>
+        {% if items_str %}
+        <small>
+            <div class="form-check">
+                <input class="form-check-input oninput" type="checkbox" value="" id="ownData" disabled>
+                <label class="form-check-label" for="ownData">
+                    Show only my {{items_str}}
+                </label>
+            </div>
+        </small>
+        {% endif %}
+    </div>
+</div>
+
+<div class="d-flex flex-row flex-wrap justify-content-between mb-1">
+    <div class="col-6 col-md-auto px-1 px-md-3">
+        <div class="dropup">
+            <button class="btn btn-xs btn-primary" type="button" id="colvis" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Show/hide columns</button>
+            <div class="dropdown-menu w-100" aria-labelledby="colvis" id="colvisdd">
+                {% for col in cols %}
+                    {% with k=only|get_at_index:forloop.counter %}
+                        {% if k in hidden_cols %}
+                            <a class="dropdown-item" data-item="{{k}}" href="JavaScript:Void(0)" onclick="colVis(this)">{{col}}</a>
+                        {% else %}
+                            <a class="dropdown-item active" data-item="{{k}}" href="JavaScript:Void(0)" onclick="colVis(this)">{{col}}</a>
+                        {% endif %}
+                    {% endwith %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-auto px-1 px-md-3">
+        <div class="input-group justify-content-end">
+            <select class="form-control oninput" id="numberOfRowsSelected">
+                <option>2</option>
+                <option>10</option>
+                <option selected>20</option>
+                <option>50</option>
+                <option>100</option>
+                <option>250</option>
+            </select>
+            <div class="input-group-append">
+                <label class="input-group-text" for="numberOfRowsSelected">rows</label>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="d-flex justify-content-center" id="tableContainer">
+    <div class="table-responsive">
+        <table class="table table-striped w-100">
+            <thead>
+                <tr>
+                    {% for col in cols %}
+                        {% with k=only|get_at_index:forloop.counter %}
+                        {% if k in hidden_cols %}
+                        <th scope="col" class="text-center {{k}}" style='display:none;'>{{col}}</th>
+                        {% else %}
+                        <th scope="col" class="text-center {{k}}">{{col}}</th>
+                        {% endif %}
+                        {% endwith %}
+                    {% endfor %}
+                    <th scope="col" class="text-center" colspan="{% if url_str %}2{% else %}1{% endif %}">
+                    </th>
+                </tr>
+            </thead>
+            <tbody id="tableContent">
+        {% for item in items %}
+            <tr class="original item{{item.id}}">
+                {% for k,v in item.items %}
+                    {% if k != 'id' %}
+                        {% if k not in 'name'  %}
+                            {% if k in hidden_cols %}
+                                <th scope="col" class="text-center {{k}}" style="display:none;">{{v|safe}}</th>
+                            {% else %}
+                                <th scope="col" class="text-center {{k}}">{{v|safe}}</th>
+                            {% endif %}
+                        {% else %}
+                            {% if k != 'name' %}
+                                <th scope="col" class="{{k}}">{{v|safe}}</th>
+                            {% else %}
+                                <th scope="col" class="{{k}}">
+                                    {% if url_str %}
+                                    <a href="{% url url_str item.id %}">{{v|safe}}</a>
+                                    {% else %}
+                                    {{v|safe}}
+                                    {% endif %}
+                                </th>
+                            {% endif %}
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+                <td>
+                    <button onclick="deleteItem(this)" data-url="{% url 'api:delete' cat_str item.id %}" data-id="{{item.id}}" class="btn btn-primary btn-sm">
+                        <span class="fa fa-trash"></span>
+                    </button>
+                </td>
+            </tr>
+        {% endfor %}
+            </tbody>
+        </table>
+        <div class="d-flex flex-row-reverse">
+            <div class="p-2"><a class id="nextButton" style="display:none;">Next</a></div>
+            <div class="p-2"><a class id="backButton" style="display:none;">Back</a></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const searchUrl = "{% url 'api:search' cat_str %}";
+    const csrfToken = '{{ csrf_token }}';
+    var hiddenCols = [];
+    {% if hidden_cols %}
+    hiddenCols = {{hidden_cols|safe}};
+    {% endif %}
+</script>
+<script type="text/javascript" src="{% static '/js/api/tableJS.js' %}"></script>

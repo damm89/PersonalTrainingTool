@@ -1,0 +1,57 @@
+{% extends "mealplans/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block head_title %}
+    Add meal plan
+{% endblock %}
+
+{% block profilecontent %}
+    <h3 class="text-center my-3">Add meal plan</h3>
+    {% if messages %}
+        {% for message in messages %}
+            {% if 'ilovepancakesclientaccounts' in message.tags %}
+                {{ message|safe }}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+    <form id="mealplan_form" method="POST" action="{% url 'mealplans:create-mealplan' %}">
+        {% csrf_token %}
+        {{ meal_plan_form.name|as_crispy_field }}
+        {{ meal_plan_form.client_account|as_crispy_field }}
+        <div class='row'>
+            <div class="col-6 col-3-md">
+                <div class="input-group-prepend">
+                    <label class="col-form-label" for="{{meal_plan_form.duration.id_for_label}}"> Mealplan Duration<span class="asteriskField">*</span></label>
+                </div>
+                <div class="input-group mb-3">
+                    {{ meal_plan_form.duration }}
+                    <div class="input-group-append">
+                        <span class="input-group-text" for="{{meal_plan_form.duration.id_for_label}}">weeks</span>
+                    </div>
+                </div>
+                <div class="input-group">
+                    {{ meal_plan_form.adjust_maintenance }}
+                    <label class="col-form-label" for="{{meal_plan_form.adjust_maintenance.id_for_label}}">Automatically adjust maintenance weekly for weight change</label>
+                </div>
+            </div>
+            <div class="col-6 col-9-md">
+                {{ meal_plan_form.mpt|as_crispy_field }}
+                {{ meal_plan_form.mpt_name }}
+            </div>
+        </div>
+        <hr>
+        {% if redirect_field_value %}
+        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+        {% endif %}
+        <button class="btn btn-lg btn-primary btn-block primaryAction my-3" type="submit">Add meal plan</button>
+    </form>
+
+    <script> 
+    $('document').ready(function() {
+        $('#id_mpt_name').val($('#id_mpt :selected').text());
+        $('#id_mpt').on('change', function() {
+            $('#id_mpt_name').val($('#id_mpt :selected').text());
+        });
+    })
+    </script>
+{% endblock %}

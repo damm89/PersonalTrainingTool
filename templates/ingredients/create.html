@@ -1,0 +1,173 @@
+{% extends "ingredients/base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block head_title %}
+    {{purpose|capfirst}} ingredient
+{% endblock %}
+
+{% block morestyles %}
+    <link rel="stylesheet" href="{% static 'css/tagify/tagify.css' %}">
+    <script src="{% static 'js/tagify/tagify.min.js' %}"></script>
+{% endblock %}
+
+{% block profilecontent %}
+    <h3 class="text-center my-3">{{purpose|capfirst}} ingredient</h3>
+    {% if messages %}
+        {% for message in messages %}
+            {% if 'ilovepancakesclientaccounts' in message.tags %}
+                {{ message|safe }}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
+    {% if purpose == 'add' %}
+    <form class="ingredients" id="ingredient_form" method="POST" action="{% url 'ingredients:create-ingredient' %}">
+    {% else %}
+        {{ form|as_crispy_errors }}
+    <form class="ingredients" id="ingredient_form" method="POST" action="{% url 'ingredients:edit-ingredient' ingredient.id %}">
+    {% endif %}
+        {% csrf_token %}
+        <div class="p-2">
+            <div class="row">
+                <div class="col-12">
+                    {{ form.name|as_crispy_field}}
+                </div>
+            </div>
+            <hr>
+        </div> 
+        <div class="d-flex flex-column flex-xl-row align-content-stretch">
+            <div class="p-2 align-self-stretch align-self-xl-end">
+                <div class="row">
+                    <div class="col-12 text-center">
+                        Amount*
+                    </div>
+                    <div class="col-12">
+                        <div class="input-group-append">
+                            {{ form.amount|as_crispy_field }}
+                            {{ form.amount_type|as_crispy_field }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-2 align-self-stretch align-self-xl-end">
+                <div class="row">
+                    <div class="col-12 text-center">
+                        Protein*
+                    </div>
+                    <div class="col-12">
+                        {{ form.original_protein|as_crispy_field }}
+                    </div>
+                </div>
+            </div>
+            <div class="p-2 align-self-stretch align-self-xl-end">
+                <div class="row">
+                    <div class="col-12 text-center">
+                        Carbs*
+                    </div>
+                    <div class="col-12">
+                        {{ form.original_carbs|as_crispy_field }}
+                    </div>
+                </div>
+            </div>
+            <div class="p-2 align-self-stretch align-self-xl-end">
+                <div class="row">
+                    <div class="col-12 text-center">
+                        Sugars
+                    </div>
+                    <div class="col-12">
+                        {{ form.original_sugars|as_crispy_field }}
+                    </div>
+                </div>
+            </div>
+            <div class="p-2 align-self-stretch align-self-xl-end">
+                <div class="row">
+                    <div class="col-12 text-center">
+                        Fibers
+                    </div>
+                    <div class="col-12">
+                        {{ form.original_fibers|as_crispy_field }}
+                    </div>
+                </div>
+            </div>
+            <div class="p-2 align-self-stretch align-self-xl-end">
+                <div class="row">
+                    <div class="col-12 text-center">
+                        Fats*
+                    </div>
+                    <div class="col-12">
+                        {{ form.original_fats|as_crispy_field }}
+                    </div>
+                </div>
+            </div>
+            <div class="p-2 align-self-stretch align-self-xl-end">
+                <div class="row">
+                    <div class="col-12 text-center">
+                        Sat. fats
+                    </div>
+                    <div class="col-12">
+                        {{ form.original_saturated_fats|as_crispy_field }}
+                    </div>
+                </div>
+            </div>
+            <div class="p-2 align-self-stretch align-self-xl-end">
+                <div class="row">
+                    <div class="col-12 text-center">
+                        Unsat. fats
+                    </div>
+                    <div class="col-12">
+                        {{ form.original_unsaturated_fats|as_crispy_field }}
+                    </div>
+                </div>
+            </div>
+            <div class="p-2 align-self-stretch align-self-xl-end">
+                <div class="row">
+                    <div class="col-12 text-center">
+                        Salt
+                    </div>
+                    <div class="col-12">
+                        {{ form.original_salt|as_crispy_field }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="p-2">
+            <hr>
+            <div class="row">
+                <div class="col-12">
+                    {{ form.comments|as_crispy_field }}
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    {{ tag_form.tag|as_crispy_field }}
+                </div>
+            </div>
+            <hr>
+            {% if redirect_field_value %}
+            <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+            {% endif %}
+            <div class="row">
+                <div class="col-12">
+                    <button class="btn btn-lg btn-primary btn-block primaryAction my-3" type="submit">{{purpose|capfirst}} ingredient</button>
+                </div>
+            </div>
+        </div> 
+    </form>
+
+    <script>
+        var categoryInput = document.querySelector('#id_tag'),
+                tagify = new Tagify(categoryInput, {
+                    whitelist : {{ tag_data_list|safe }},
+                    keepInvalidTags:true,
+                    dropdown:{
+                        enabled: 0,
+                        maxItems: 100
+                    },
+                });
+        
+        $('#div_id_amount').addClass("w-100");
+        $('#div_id_amount_type').addClass("w-100");
+        $('tags').attr('style',"height:auto!important;")
+    </script>
+{% endblock %}

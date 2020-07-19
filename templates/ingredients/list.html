@@ -1,0 +1,45 @@
+{% extends "ingredients/base.html" %}
+{% load static %}
+
+{% block head_title %}
+    Ingredients
+{% endblock %}
+
+{% block profilecontent %}
+    {% if messages %}
+    {% for message in messages %}
+        {% if 'ilovepancakesclientaccounts' in message.tags %}
+            {{ message|safe }}
+        {% endif %}
+    {% endfor %}
+    {% endif %}
+
+    {% if buttons %}
+        {% include "api/buttons.html" with buttons=buttons %}
+        <hr>
+    {% endif %}
+
+    <script>
+        var listUrl = "{% url 'api:get-view' cat_str %}";
+        var delUrl = "{% url 'api:delete' cat_str 0 %}";
+        var editUrl = "{% url 'ingredients:edit-ingredient' 0 %}";
+        const deletable = true;
+        const editable = true;
+        const cols = {{only|safe}};
+    </script>
+
+    {% include "empty_table.html" with item_str='ingredient' items_str='ingredients' cols=cols cat_str=cat_str items=ingredients url_str="ingredients:edit-ingredient" %}
+
+    <script>
+        function getWarning(elem) {
+            var elem = $(elem);
+            var ingredient_id = elem.attr('data-id');
+            return $.ajax({
+                url: "{% url 'api:get-item' 'del_ingredient' %}",
+                data: { 'ingredient_id':ingredient_id,
+                },
+                dataType: 'json'
+            });
+        };
+    </script>
+{% endblock %}

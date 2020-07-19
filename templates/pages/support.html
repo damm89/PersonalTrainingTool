@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block head_title %}
+    Support
+{% endblock %}
+
+{% block content %}
+    <div class="row" style="margin: 0 auto;">
+        <div class="mx-auto">
+            <h2 class="mt-5 mb-3 text-center">Need your problem solved?</h2>
+            Please fill out the form below and we will do our best to answer in less than 24 hours.
+            <div class="mt-5" style="border: 1px solid;padding:20px;border-radius:10px;">
+               {% crispy form %}
+            </div>
+            {% if messages %}
+                {% for message in messages %}
+                    {% if 'ilovepancakesupport' in message.tags %}
+                        {{ message|safe }}
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+       </div>
+    </div>
+{% endblock %}
