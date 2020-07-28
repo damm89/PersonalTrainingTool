@@ -109,7 +109,7 @@ DATABASES = {
         'PORT': '5432',
     }
 }
-
+# Necessary for Heroku
 """
 import dj_database_url
 
