@@ -2,6 +2,8 @@ from django.shortcuts import render
 from django.views.generic import TemplateView
 from pages.forms import SupportForm
 
+from ws.static_variables import SUCCESS_MESSAGE, ERROR_MESSAGE
+
 # Create your views here.
 
 class HomePageView(TemplateView):
@@ -27,13 +29,11 @@ def SupportView(request):
             
             try:
                 send_mail(subject, message, 'noreply@pttool.com', ['danielammeraal@gmail.com'])
+                messages.success(request, SUCCESS_MESSAGE.format("We will try to contact you within 24 hours. Thank you."), extra_tags='ilovepancakesupport')
+
             except Exception as e:
-                return HttpResponse('Invalid header found: {}'.format(e.args[0]))
-            
-            messages.success(request, '<div class="my-5 alert alert-success alert-dismissible fade show"><strong>Success!</strong> We will try to contact you within 24 hours.<button type="button" class="close" data-dismiss="alert">&times;</button></div>',extra_tags='ilovepancakesupport')
-            
-            #return redirect('success')
-            
+                messages.error(request, ERROR_MESSAGE.format("Something went wrong: {}".format(e.args[0])),extra_tags='ilovepancakesupport')
+
     return render(request, 'pages/support.html', {'form': form})
 
 def PricingView(request):
