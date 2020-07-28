@@ -186,7 +186,6 @@ SOCIALACCOUNT_ADAPTER = 'users.adapters.MySocialAccountAdapter'
 
 # Email backend
 #EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-#SENDGRID_API_KEY = "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"
 
 EMAIL_HOST = config('MAILGUN_SMTP_SERVER', '')
 EMAIL_PORT = config('MAILGUN_SMTP_PORT', '')
