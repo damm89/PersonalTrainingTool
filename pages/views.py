@@ -26,9 +26,9 @@ def SupportView(request):
             message = '\n\n'.join([message,email])
             
             try:
-                send_mail(subject, message, 'noreply@pttool.com', ['noreply@pttool.com'])
-            except Exception:
-                return HttpResponse('Invalid header found.')
+                send_mail(subject, message, 'noreply@pttool.com', ['danielammeraal@gmail.com'])
+            except Exception as e:
+                return HttpResponse('Invalid header found: {}'.format(e.args[0]))
             
             messages.success(request, '<div class="my-5 alert alert-success alert-dismissible fade show"><strong>Success!</strong> We will try to contact you within 24 hours.<button type="button" class="close" data-dismiss="alert">&times;</button></div>',extra_tags='ilovepancakesupport')
             
