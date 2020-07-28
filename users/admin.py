@@ -1,16 +1,16 @@
-# Register your models here.
-# users/admin.py
+from django.apps import apps
 from django.contrib import admin
-from django.contrib.auth import get_user_model
-from django.contrib.auth.admin import UserAdmin
 
-from .forms import CustomUserCreationForm, CustomUserChangeForm
-from .models import CustomUser
+class ListAdminMixin(object):
+    def __init__(self, model, admin_site):
+        self.list_display = [field.name for field in model._meta.fields]
+        super(ListAdminMixin, self).__init__(model, admin_site)
 
-class CustomUserAdmin(UserAdmin):
-    add_form = CustomUserCreationForm
-    form = CustomUserChangeForm
-    model = CustomUser
-    list_display = ['email','username',]
 
-admin.site.register(CustomUser, CustomUserAdmin)
+models = apps.get_models()
+for model in models:
+    admin_class = type('AdminClass', (ListAdminMixin, admin.ModelAdmin), {})
+    try:
+        admin.site.register(model, admin_class)
+    except admin.sites.AlreadyRegistered:
+        pass

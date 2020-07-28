@@ -198,6 +198,8 @@
             search = getDataList();
             search.done(function(data) {
                 buildDataList(data);
+                console.log('SEARCH DONE');
+                console.log(data);
             })
         }, 250);
     };

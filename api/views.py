@@ -33,14 +33,16 @@ def searchSuggestion(request, category):
     if request.method == 'GET':
         contains = request.GET.get('contains', False)
         query = SearchQuery(contains)
-
         try:
             object_cat = get_model_object(category)
             if object_cat != None:
                 results = list(object_cat.objects.annotate(
-                    rank=SearchRank(F('search_document'),
+                    rank=SearchRank(F('search_name'),
                     query)).order_by('-rank')[:5].values_list('name', flat=True))
-                    
+                
+                for _ in object_cat.objects.annotate(rank=SearchRank(F('search_name'),query)).order_by('-rank').values():
+                    print(_['name'], _['rank'])
+
                 if len(results) == 0:
                     return JsonResponse({'status_code':404}, safe=False)
                 else:

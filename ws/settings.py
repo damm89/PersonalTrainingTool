@@ -96,7 +96,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'ws.wsgi.application'
 
-"""
+
 # Database
 # https://docs.djangoproject.com/en/2.1/ref/settings/#databases
 DATABASES = {
@@ -119,7 +119,7 @@ DATABASES = {
     )
 }
 
-
+"""
 # Password validation
 # https://docs.djangoproject.com/en/2.1/ref/settings/#auth-password-validators
 

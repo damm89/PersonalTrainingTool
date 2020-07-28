@@ -259,7 +259,7 @@ def create_meal_plan(request, form, meal_plan_obj=False):
                                     template = mpt_name,
                                     form = json.dumps(form.cleaned_data))
 
-        meal_plan = meal_plan.save()
+        meal_plan.save()
         dtime = timeScript.time() - time_now
         print("IT TOOK: " + str(dtime) + "s")
         return meal_plan

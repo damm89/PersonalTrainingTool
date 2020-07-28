@@ -34,13 +34,14 @@ def CreateIngredient(request):
         if form.is_valid():
             if tag_form.is_valid():
                 ing_objects = []
+                ingredient = Ingredient(**form.cleaned_data)
+                ingredient.owner = request.user
+                ingredient.save(tag_form=tag_form)
+                ing_objects.append(ingredient)
+                messages.success(request, SUCCESS_MESSAGE.format("You created ingredient: {}.".format(ingredient.name)),extra_tags='ilovepancakesclientaccounts')
+                return HttpResponseRedirect(reverse('ingredients:ingredients')) 
                 try:
-                    ingredient = Ingredient(**form.cleaned_data)
-                    ingredient.owner = request.user
-                    ingredient.save(tag_form=tag_form)
-                    ing_objects.append(ingredient)
-                    messages.success(request, SUCCESS_MESSAGE.format("You created ingredient: {}.".format(ingredient.name)),extra_tags='ilovepancakesclientaccounts')
-                    return HttpResponseRedirect(reverse('ingredients:ingredients')) 
+                    pass
 
                 except Exception:
                     for ing in ing_objects:
@@ -111,7 +112,7 @@ def MassUploadIngredients(request):
         if request.is_ajax():
             ingredients_dict = json.loads(request.POST.get('ingredientsData', None))
             ingredients = []
-            
+
             try:
                 for ingredient in ingredients_dict:
                     if 'tag' in ingredients_dict[ingredient]['cleaned_data']:
@@ -124,8 +125,7 @@ def MassUploadIngredients(request):
                     ingredient.save(tag_form=tag_form)
                     ingredients.append(ingredient)
 
-                response = HttpResponse(
-                    json.dumps({'message': 'Successfully uploaded {} ingredient(s).'.format(len(ingredients))}),
+                response = HttpResponse(json.dumps({'message': 'Successfully uploaded {} ingredient(s).'.format(len(ingredients))}),
                     content_type='application/json')
                 response.status_code = 200
                 return response

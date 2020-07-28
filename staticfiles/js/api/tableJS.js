@@ -4,7 +4,7 @@
     var next = 0;
     var delayTimer;
     var back = 1;
-    var dataList;
+    var dataList = [];
 
     function colVis(elem) {
         var el = $(elem);
@@ -31,6 +31,8 @@
             };
             $('#acSe').empty();
             $('#acSe').append(options);
+        } else {
+            dataList = [];
         };
     };
 
@@ -133,7 +135,7 @@
                 };
                 
                 if (key2 != 'id' ) {
-                    if (!['name','categories','amount_type'].includes(key2)) {
+                    if (!['name'].includes(key2)) {
                         row = row + startRow + 'class="text-center ' + key2 + '">' + data[key][key2] + '</th>';
                     } else {
                         row = row + startRow + 'class="'+ key2 + '">'
@@ -196,25 +198,30 @@
             search = getDataList();
             search.done(function(data) {
                 buildDataList(data);
+                console.log('SEARCH DONE');
+                console.log(data);
             })
         }, 250);
     };
 
     function searchOnChange() {
+        next = 0;
+        $('tr.original').hide();
+        $('tr.unoriginal').remove();
         var elem = $('#searchInput')
         contains = elem.val().trim().toLowerCase();
 
         if (dataList.includes(contains)) {
-            elem[0].setCustomValidity('');
-            elem.removeClass('is-invalid');
             clearTimeout(delayTimer);
             delayTimer = setTimeout(function() {
                 return getData('update');
             }, 100);
         } else {
-            elem[0].setCustomValidity('Please select a value from list.');
-            elem.addClass('is-invalid');
-            elem[0].reportValidity();
+            clearTimeout(delayTimer);
+            delayTimer = setTimeout(function() {
+                return getData('update');
+            }, 100);
+            
         };
     };
 
@@ -242,17 +249,14 @@
         $('#numberOfRowsSelected').prop('disabled',false);
         $('#ownData').prop('disabled',false);
 
-        $('.oninput').on('input', function() {
+        $('input.oninput').on('input', function() {
             searchOnInput();
         });
-        
-        $('.oninput').on('change', function() {
-            next = 0;
-            $('tr.original').hide();
-            $('tr.unoriginal').remove();
+
+        $('select.oninput').on('change', function() {
             searchOnChange();
         });
-
+        
         showNextButtonOrNot($('tr.original').length);
 
         $('#nextButton').on('click', function() {
@@ -276,6 +280,16 @@
 
         $('#colvisdd').on({"click":function(e){
               e.stopPropagation();}
+        });
+
+        $(document).keyup(function(event) {
+            if ($("#searchInput").is(":focus") && event.key == "Enter") {
+                searchOnChange();
+            };
+        });
+
+        $('#seB').on('click', function(){
+            searchOnChange();
         });
 
     });

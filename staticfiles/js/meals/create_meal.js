@@ -10,8 +10,55 @@ var ingredientsIds;
 var dataKeys;
 
 
-function calculateTableQuantities() {
+var WEIGHT_MULTIPLIERS = {
+    'kg':10,
+    'gram':0.01,
+    'oz':.2835,
+    'lb':4.5359237,
+    'piece':1,
+}
 
+function doMetricCalc(quantityString, wmultiplier) {
+    var result = parseFloat(wmultiplier);
+    var quantity = quantityString.replace(/[^\d\.]*/g, '');
+    if (quantity.length > 0) {
+        quantity = parseFloat(quantity);
+        if (isNaN(quantity)){
+            return result
+        } else {
+            result = wmultiplier * quantity;
+            return result
+        };
+    } else {
+        return result
+    };
+}
+
+function stringTo100g(quantityString) {
+    quantityString = quantityString.replace(/ /g,'').replace(/,/,'.');
+    var found = 0;
+    for (let key in WEIGHT_MULTIPLIERS) {
+        if(WEIGHT_MULTIPLIERS.hasOwnProperty(key)){
+            if ( quantityString.search(key) > 0) {
+                found = 1;
+                multiplier = doMetricCalc(quantityString, WEIGHT_MULTIPLIERS[key]);
+                break
+            };
+      }
+    };
+    if (found == 0) {
+        multiplier = doMetricCalc(quantityString, 1)
+    };
+    return multiplier
+};
+
+function roundToNearestDecimal(number) {
+    return Math.round( 10 * number) / 10
+};
+
+
+function calculateTableQuantities() {
+    //
     var kcals = 0;
     var protein = 0;
     var carbs = 0;
@@ -47,7 +94,8 @@ function calculateTableQuantities() {
 };
 
 
-function buildDatalist(data) {
+function buildIngDatalist(data) {
+    //
     var keys = Object.keys(data);
     var rows = ""
     var nothingFound = 0;
@@ -65,6 +113,7 @@ function buildDatalist(data) {
 
 
 function getData(elem) {
+    // 
     datalistId = $(elem).attr('list');
     idStr = $(elem).attr('id');
     contains = $('#'+idStr).val().trim();
@@ -72,7 +121,7 @@ function getData(elem) {
     $.ajax({
         url: getIngredientListUrl,
         data: {
-            'update': '1',
+            'intent': 'update',
             'contains': contains,
             'owner': '0',
             'number_of_rows': numberOfRowsDone + numberOfRows,
@@ -80,7 +129,7 @@ function getData(elem) {
         },
         dataType: 'json',
         success: function (data) {
-            return buildDatalist(data);
+            return buildIngDatalist(data);
         },
         error: function(xhr, textStatus, error) {
             console.log(xhr.responseText);
@@ -93,7 +142,8 @@ function getData(elem) {
 };
 
 
-function getVars() {
+function getIngVars() {
+    // Gets ingredient's ids and id's of the quantity fields
     ingredientsIds = [];
     dataKeys = [];
     $('input[id*=ingredient]:hidden').each(function(){
@@ -107,7 +157,9 @@ function getVars() {
 
 
 function getIngredientData() {
-    getVars();
+    // First fills ingredientsIds and dataKeys and calls ajax function to get data on the different ingredients. 
+    // if successfull, then calls the calculateTableQuantities function to calculate the table values
+    getIngVars();
     $.ajax({
         url: getIngredientDataUrl,
         data: {
@@ -126,6 +178,8 @@ function getIngredientData() {
 
 
 function changeValueHiddenInput(elem) {
+    // Changes the value of the hidden inputs for the different ingredients
+
     var datalstId = $(elem).attr('id').replace('ingredient_name','datalist');
     var ingredientPk = $('#'+datalstId+' option[value="' + $(elem).val() + '"]').attr('data-id');
     var hiddenInputId = $(elem).attr('id').replace('ingredient_name','ingredient');
@@ -136,6 +190,7 @@ function changeValueHiddenInput(elem) {
 
 var delayTimer;
 function delayedFunction(func, elem=0, waitTime=500) {
+    // Function that calls another function <func> with a delay of <waitTime>
     clearTimeout(delayTimer);
     delayTimer = setTimeout(function() {
         if (elem == 0) {
@@ -150,6 +205,7 @@ function findChoice(elem) {
     var optionFound = false;
     var dlId = elem.attr('list');
     var datalistOptions = $('#'+dlId+' option');
+
     // Determine whether an option exists with the current value of the input.
     elVal = elem.val();
     for (var j = 0; j < datalistOptions.length; j++) {

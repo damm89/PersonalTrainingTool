@@ -1,9 +1,12 @@
 from django.db import models
 from django.conf import settings
 
+from django.contrib.postgres.search import SearchVector
+
 from ws.models import SearchableModel
 from ws.static_variables import WEIGHT_MULTIPLIERS
 from ws.functions import calculate_kcal, list_2_unordered_list, model_unique_name
+
 
 
 class IngredientTag(SearchableModel):
@@ -157,7 +160,7 @@ class Ingredient(SearchableModel):
             tag_form = False
 
         super().save(*args, **kwargs)
-
+        
         if tag_form:
             self.add_tags(tag_form)
             kwargs['update_fields'] = ['tags']

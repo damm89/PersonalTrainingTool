@@ -45,7 +45,6 @@ def model_unique_name(instance, obj, name, k=1, old_name=''):
     """
 
     objs = list(obj.objects.filter(name=name))
-    print(objs)
     if len(objs) > 0:
         if instance.pk == objs[0].pk:
             return name

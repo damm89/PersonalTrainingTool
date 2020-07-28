@@ -103,13 +103,14 @@ def CreateMealPlan(request):
         meal_plan_form = MealPlanForm(request.POST, user = user)
 
         if meal_plan_form.is_valid():
+            
             try:
                 mealplan = create_meal_plan(request, meal_plan_form)
-                messages.success(request, SUCCESS_MESSAGE.format("{}".format("You created {}.".format(mealplan.name))),extra_tags='ilovepancakesclientaccounts')
+                messages.success(request, SUCCESS_MESSAGE.format("You created {}.".format(mealplan.name)),extra_tags='ilovepancakesclientaccounts')
                 return HttpResponseRedirect(reverse('mealplans:mealplans')) 
             
             except Exception as e:
-                messages.error(request, ERROR_MESSAGE.format(e.args[0]['message']),extra_tags='ilovepancakesclientaccounts')
+                messages.error(request, ERROR_MESSAGE.format(e),extra_tags='ilovepancakesclientaccounts')
                 return render(request, 'mealplans/create.html', {'meal_plan_form': meal_plan_form})
         
         else:

@@ -81,14 +81,13 @@
         };
 
         function cleanString(x) {
-            x = x.replace(/ /,'');
+            x = x.replace(/ /,'abcXaXaXcba');
             x = x.replace(/</,'');
             x = x.replace(/>/,'');
             x = x.replace(/;/,'');
             x = x.replace(/$/,'');
             x = x.replace(/\*/,'');
             x = x.replace(/\+/,'');
-            x = x.replace(/:/,'');
             x = x.replace(/@/,'');
             x = x.replace(/!/,'');
             x = x.replace(/~/,'');
@@ -101,13 +100,14 @@
             x = x.replace("'",'');
             x = x.replace(/#/,'no.');
             x = x.replace(/%/,'percent');
-            x = x.replace(/_/,' ');
             x = x.replace(/=/,' is ');
+            x = x.replace('abcXaXaXcba', ' ');
             return x;
         };
 
         function cleanData() {
             cleanedData = {};
+            console.log(ingredientsData)
             for (const key in ingredientsData["data"]) { 
                 ingredientsVals = ingredientsData["data"][key];
                 cleanedData[key] = {"cleaned_data":{}};
@@ -118,14 +118,18 @@
                         foodValue = "";
                     };
 
-                    if (matchUp[foodKey] != "name" && matchUp[foodKey] != "amount_type" && matchUp[foodKey] != "amount" && matchUp[foodKey] != "comments" && matchUp[foodKey] != "tag") {
+                    if (!["name", "amount_type", "amount", "comments", "tag"].includes(matchUp[foodKey])) {
                         cleanedData[key]['cleaned_data']['original_'+matchUp[foodKey]] = parseFloat(foodValue);
                     } else {
-                        cleanedData[key]['cleaned_data'][matchUp[foodKey]] = cleanString(foodValue);
+                        if (matchUp[foodKey] != "comments") {
+                            cleanedData[key]['cleaned_data'][matchUp[foodKey]] = cleanString(foodValue);
+                        } else {
+                            cleanedData[key]['cleaned_data'][matchUp[foodKey]] = encodeURIComponent(foodValue);
+                        };
                     };
 
                     if (matchUp[foodKey] == "amount") {
-                        amount_string = cleanString(foodValue)
+                        amount_string = cleanString(foodValue);
                     };
                 };
 
@@ -231,6 +235,8 @@
             for (const foodKey in foodKeys) {
                 var foodValue = foodKeys[foodKey];
                 var x = foodValue.toLowerCase();
+                console.log(x);
+                console.log(foodValue);
                 if (x.search('uni') > -1) {
                     matchUp[foodValue] = "amount_type";
                 } else {
@@ -406,7 +412,7 @@
                             row = row + '<th scope="row">' + cleanedData[key]['cleaned_data'][fieldVal] + '</th>';
 
                         } else {
-                            if (fieldVal != 'comments' && fieldVal != 'amount' && fieldVal != 'tag' && fieldVal != 'amount_type') {
+                            if (!["comments", "amount", "tag", "amount_type"].includes(fieldVal)){
                                 var rowValue = cleanedData[key]['cleaned_data']['original_' + fieldVal];
                                 if (typeof rowValue != 'undefined') {
                                     row = row + '<th scope="row" class="text-center">' + rowValue + '</th>';
@@ -418,6 +424,9 @@
                             } else {
                                 var rowValue = cleanedData[key]['cleaned_data'][fieldVal];
                                 if (typeof rowValue != 'undefined') {
+                                    if (fieldVal == "comments") {
+                                        rowValue = decodeURIComponent(rowValue);
+                                    };
                                     row = row + '<th scope="row" class="text-center">' + rowValue + '</th>';
 
                                 } else {
