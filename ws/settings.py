@@ -188,10 +188,10 @@ SOCIALACCOUNT_ADAPTER = 'users.adapters.MySocialAccountAdapter'
 #EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 #SENDGRID_API_KEY = "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"
 
-EMAIL_HOST = 'smtp.sendgrid.net'
-EMAIL_HOST_USER = config('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
-EMAIL_PORT = 587
+EMAIL_HOST = config('MAILGUN_SMTP_SERVER', '')
+EMAIL_PORT = config('MAILGUN_SMTP_PORT', '')
+EMAIL_HOST_USER = config('MAILGUN_SMTP_LOGIN', '')
+EMAIL_HOST_PASSWORD = config('MAILGUN_SMTP_PASSWORD', '')
 EMAIL_USE_TLS = True
 
 # Crispy forms backend
