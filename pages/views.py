@@ -26,7 +26,7 @@ def SupportView(request):
             message = '\n\n'.join([message,email])
             
             try:
-                send_mail(subject, message, 'danielammeraal@gmail.com', ['danielammeraal@gmail.com'])
+                send_mail(subject, message, 'noreply@pttool.com', ['noreply@pttool.com'])
             except Exception:
                 return HttpResponse('Invalid header found.')
             
